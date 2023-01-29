@@ -1,48 +1,50 @@
 import 'dotenv/config';
 import apicalypse, { ApicalypseConfig } from "apicalypse";
-import { HowLongToBeatService, HowLongToBeatEntry } from 'howlongtobeat';
+import { HowLongToBeatService, HowLongToBeatEntry } from 'howlongtobeat'
+import { writeToPath } from 'fast-csv';
 
 import APIResponse from './interfaces/APIResponse';
 import GameInfo from './interfaces/GameInfo';
-import getToken from './auth/getToken';
 
-const baseUrl = 'https://api.igdb.com/v4';
+import getToken from './auth/getToken';
+import { writeInfoToExcelFile } from './utils/ExcelOperations';
+import { formatInfoToCSV } from './utils/CsvOperations';
+
 const hltbService = new HowLongToBeatService();
 
 async function getGameInfo(gameName: string, requestOptions: ApicalypseConfig): Promise<APIResponse[]> {
   const response = apicalypse(requestOptions);
   const apiResponse = await response.fields([
-    'name', 'total_rating', 'artworks', 'collection', 'first_release_date',
-    'genres', 'involved_companies', 'language_supports', 'platforms',
-  ]).search(gameName).limit(3).request(`${baseUrl}/games`);
+    'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
+  ]).search(gameName).limit(3).request(`${process.env.API_BASE_URL}/games`);
 
   return apiResponse.data;
 }
 
-async function getIdInfo(data: APIResponse[], requestOptions: ApicalypseConfig): Promise<Promise<GameInfo>[]> {
+async function getInfosByID(data: APIResponse[], requestOptions: ApicalypseConfig): Promise<GameInfo[]> {
   const response = apicalypse(requestOptions);
 
   const allPromises = data.map(async game => {
     const gameGenreFormatted = game.genres.toString();
-    const promisesGenre = await response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${baseUrl}/genres`);
+    const promisesGenre = await response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
 
     const gamePlatformFormatted = game.platforms.toString();
-    const promisesPlatform = await response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${baseUrl}/platforms`);
-    
+    const promisesPlatform = await response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
+
     return { gameId: game.id, promisesGenre, promisesPlatform };
   });
 
-  const allPromisesResolved = await Promise.all(allPromises);
+  const gamesGenresAndPlatform = await Promise.all(allPromises);
 
-  const gameInfo = data.map(async game => {
+  const gameInfoPromises = data.map(async game => {
     const unixTimeStampToMillis = new Date(game.first_release_date * 1000);
     const hltbResponse = await hltbService.search(game.name);
     const firstGameHltb = hltbResponse.at(0);
-    
+
     const actualGameInfo = {
       name: game.name,
-      console: allPromisesResolved.find(gameResolve => gameResolve.gameId === game.id)?.promisesPlatform.data,
-      genres: allPromisesResolved.find(gameResolve => gameResolve.gameId === game.id)?.promisesGenre.data,
+      console: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesPlatform.data,
+      genres: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesGenre.data,
       rating: game.total_rating,
       releaseDate: unixTimeStampToMillis,
       difficulty: 0,
@@ -53,12 +55,24 @@ async function getIdInfo(data: APIResponse[], requestOptions: ApicalypseConfig):
       },
     } as GameInfo;
 
-    console.log(actualGameInfo);
     return actualGameInfo;
   });
 
+  const gamesInfo = await Promise.all(gameInfoPromises);
 
-  return gameInfo;
+  return gamesInfo;
+}
+
+async function insertNewGameToExcel(gameName: string, requestOptions: ApicalypseConfig) {
+  const gamesInfo = await getGameInfo(gameName, requestOptions);
+
+  const gameInformationComplete = await getInfosByID(gamesInfo, requestOptions);
+
+  const gamesInfoInCsv = gameInformationComplete.map(game => formatInfoToCSV(game));
+
+  gamesInfoInCsv.forEach(async gameInfo => {
+    await writeInfoToExcelFile(gameInfo);
+  });
 }
 
 getToken().then(async responseToken => {
@@ -72,9 +86,9 @@ getToken().then(async responseToken => {
       'Client-ID': process.env.CLIENT_ID,
       'Authorization': `Bearer ${access_token}`
     },
-  }
+  };
 
-  const gamesInfo = await getGameInfo('gta', requestOptions)
+  await insertNewGameToExcel('mario', requestOptions);
 
-  const gameInformationComplete = await getIdInfo(gamesInfo, requestOptions);
+  await insertNewGameToExcel('zelda', requestOptions);
 });
