@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import apicalypse, { ApicalypseConfig } from "apicalypse";
 import { HowLongToBeatService, HowLongToBeatEntry } from 'howlongtobeat'
-import { writeToPath } from 'fast-csv';
 
 import APIResponse from './interfaces/APIResponse';
 import GameInfo from './interfaces/GameInfo';
