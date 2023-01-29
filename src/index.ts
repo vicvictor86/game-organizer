@@ -79,7 +79,7 @@ getToken().then(async responseToken => {
   const { access_token, expiresIn, tokenType } = responseToken;
 
   const requestOptions: ApicalypseConfig = {
-    baseURL: "https://api.igdb.com/v4/",
+    baseURL: process.env.API_BASE_URL,
     method: 'POST',
     headers: {
       'Accept': 'application/json',
@@ -88,7 +88,9 @@ getToken().then(async responseToken => {
     },
   };
 
-  await insertNewGameToExcel('mario', requestOptions);
+  // await insertNewGameToExcel('mario', requestOptions);
 
-  await insertNewGameToExcel('zelda', requestOptions);
+  // await insertNewGameToExcel('zelda', requestOptions);
+
+  await insertNewGameToExcel('sonic', requestOptions);
 });
