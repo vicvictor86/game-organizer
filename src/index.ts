@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import apicalypse, { ApicalypseConfig } from "apicalypse";
 import { HowLongToBeatService, HowLongToBeatEntry } from 'howlongtobeat'
+import * as readline from 'readline';
 
 import APIResponse from './interfaces/APIResponse';
 import GameInfo from './interfaces/GameInfo';
@@ -74,22 +75,26 @@ async function insertNewGameToExcel(gameName: string, requestOptions: Apicalypse
   });
 }
 
-getToken().then(async responseToken => {
-  const { access_token, expiresIn, tokenType } = responseToken;
-
-  const requestOptions: ApicalypseConfig = {
-    baseURL: process.env.API_BASE_URL,
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Client-ID': process.env.CLIENT_ID,
-      'Authorization': `Bearer ${access_token}`
-    },
-  };
-
-  // await insertNewGameToExcel('mario', requestOptions);
-
-  // await insertNewGameToExcel('zelda', requestOptions);
-
-  await insertNewGameToExcel('sonic', requestOptions);
+let rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
 });
+
+rl.question('Insert the game name: ', (answer) => {
+  getToken().then(async responseToken => {
+    const { access_token, expiresIn, tokenType } = responseToken;
+
+    const requestOptions: ApicalypseConfig = {
+      baseURL: process.env.API_BASE_URL,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Client-ID': process.env.CLIENT_ID,
+        'Authorization': `Bearer ${access_token}`
+      },
+    };
+
+    await insertNewGameToExcel(answer, requestOptions);
+  });
+
+})
