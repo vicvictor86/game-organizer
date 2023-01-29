@@ -453,7 +453,7 @@ exceljs@^4.3.0:
     unzipper "^0.10.11"
     uuid "^8.3.0"
 
-fast-csv@^4.3.1, fast-csv@^4.3.6:
+fast-csv@^4.3.1:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/fast-csv/-/fast-csv-4.3.6.tgz#70349bdd8fe4d66b1130d8c91820b64a21bc4a63"
   integrity sha512-2RNSpuwwsJGP0frGsOmTb9oUF+VkFSM4SyLTDgwf2ciHWTarN0lQTC+F2f/t5J9QjW+c65VFIAAu85GsvMIusw==
