@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@fast-csv/format": "^4.3.5",
+    "@notionhq/client": "^2.2.3",
     "@types/apicalypse": "^0.1.1",
     "apicalypse": "^0.2.0",
     "dotenv": "^16.0.3",
