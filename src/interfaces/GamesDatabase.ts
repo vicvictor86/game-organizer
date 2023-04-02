@@ -4,4 +4,7 @@ export interface GamesDatabase {
   status?: string;
   rating?: string;
   completion?: Date;
+  time_to_beat: number;
+  release_date?: Date;
+  completion_date?: Date;
 }

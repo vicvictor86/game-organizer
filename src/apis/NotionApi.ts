@@ -1,7 +1,8 @@
 import { Client } from "@notionhq/client";
-import { AppError } from "../errors/AppError";
+import { AppError } from "../shared/errors/AppError";
 import { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
+import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 
 interface PlatformOptions {
   id: string;
@@ -28,14 +29,15 @@ const notion = new Client({
 const databaseGameID = process.env.NOTION_GAME_DATABASE_ID;
 const databasePlatformID = process.env.NOTION_PLATFORM_DATABASE_ID;
 
-export async function readItem() {
-  console.log(databaseGameID)
+export async function readItem(title: string) {
   if (databaseGameID) {
-    await notion.databases.query({
+    const gamesInDatabase = await notion.databases.query({
       database_id: databaseGameID,
-    }).then(response => {
-      console.log(response.results[2].properties.platform)
-    })
+    });
+
+    const game = gamesInDatabase.results.find(game => game.properties.title === title);
+
+    return game;
   }
 }
 
@@ -60,17 +62,17 @@ export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
 
   const undefinedPlatform = platformsIdsWithName.find(platform => platform.name === 'Undefined Platform');
 
-  if(!undefinedPlatform) {
+  if (!undefinedPlatform) {
     throw new AppError('Error: No undefined platform, please create one');
   }
 
   return { platformOptions: platformsIdsWithName, undefinedPlatform };
 }
 
-export async function insertGame(gameName: string, gameInfo: Request): Promise<void> {
+export async function insertGame(gameName: string, gameInfo: Request): Promise<CreatePageResponse | undefined> {
   if (!databaseGameID || !databasePlatformID) {
     console.log('Error: No database ID');
-    return;
+    return undefined;
   };
 
   const gameDatabaseInfo = await notion.databases.retrieve({
@@ -126,6 +128,7 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<v
     },
   });
 
-  console.log(response);
   console.log("Game inserted with success!")
+
+  return response;
 }
