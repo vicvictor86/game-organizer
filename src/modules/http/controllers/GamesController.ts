@@ -8,7 +8,6 @@ export default class GameController {
     const createGameService = container.resolve(CreateGameService);
 
     const gameInformation = await createGameService.execute(title);
-    console.log(gameInformation);
 
     return response.status(200).json(gameInformation);
   }
