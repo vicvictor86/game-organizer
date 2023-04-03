@@ -8,5 +8,6 @@
     "howlongtobeat",
     "IGDBAPI",
     "Millis"
-  ]
+  ],
+  "typescript.tsdk": "node_modules\\typescript\\lib"
 }
