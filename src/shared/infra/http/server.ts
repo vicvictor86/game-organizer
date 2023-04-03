@@ -31,6 +31,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     });
 })
 
-app.listen(3333, () => {
-    console.log("Server run on port 3333");
+const port = Number(process.env.PORT) || 3333;
+const host = process.env.HOST || 'localhost';
+
+app.listen(port, host, () => {
+    console.log(`Server run on port: ${port}`);
 })
