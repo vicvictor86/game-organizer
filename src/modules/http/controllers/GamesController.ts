@@ -13,6 +13,10 @@ export default class GameController {
     return response.status(200).json(gameInformation);
   }
 
+  public async index(request: Request, response: Response): Promise<Response> {
+    return response.status(200).json({ message: "Hello World" });
+  }
+
   // public async show(request: Request, response: Response): Promise<Response> {
   //   const showAlternativeService = container.resolve(ShowAlternativeService);
 
