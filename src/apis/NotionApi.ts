@@ -22,6 +22,34 @@ interface Request {
   timeToBeat: TimesToBeat;
 }
 
+interface gamesProperties {
+  properties: {
+    title: string,
+    platform: string,
+    status: {
+      select: {
+        options: SelectOptions[];
+      }
+    },
+    time_to_beat: number,
+    release_date: string,
+  }
+}
+
+interface IPlatformProperties {
+  id: string,
+  properties: {
+    name: {
+      title: [
+        {
+          text: {
+            content: string;
+          }
+        }
+      ]
+    }
+  }
+}
 const notion = new Client({
   auth: process.env.NOTION_KEY,
 })
@@ -35,7 +63,14 @@ export async function readItem(title: string) {
       database_id: databaseGameID,
     });
 
-    const game = gamesInDatabase.results.find(game => game.properties.title === title);
+    const gamesWithProperties = gamesInDatabase.results.map(result => {
+      const resultAny = result as any;
+      const resultWithProperties = resultAny as gamesProperties;
+
+      return resultWithProperties;
+    });
+
+    const game = gamesWithProperties.find(game => game.properties.title === title);
 
     return game;
   }
@@ -54,9 +89,12 @@ export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
   const entries = queryAllPlatforms.results;
 
   const platformsIdsWithName = entries.map(entry => {
+    const entryAny = entry as any;
+    const entryWithProperties = entryAny as IPlatformProperties;
+
     return {
-      id: entry.id,
-      name: entry.properties.name.title[0].text.content as string,
+      id: entryWithProperties.id,
+      name: entryWithProperties.properties.name.title[0].text.content,
     } as PlatformOptions;
   });
 
@@ -79,7 +117,10 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
     database_id: databaseGameID,
   });
 
-  const statusOptions = gameDatabaseInfo.properties.status.select.options as SelectOptions[];
+  const gamesAny = gameDatabaseInfo as any;
+  const gamesWithProperties = gamesAny as gamesProperties;
+
+  const statusOptions = gamesWithProperties.properties.status.select.options;
   const { platformOptions, undefinedPlatform } = await getPlatformsOptions();
 
   if (!platformOptions) {
