@@ -169,7 +169,7 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
     },
   });
 
-  console.log("Game inserted with success!")
+  console.log(`The game ${gameName} inserted with success!`)
 
   return response;
 }
