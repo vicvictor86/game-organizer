@@ -1,104 +1,81 @@
-import apicalypse, { ApicalypseConfig } from "apicalypse";
-import APIResponse from '../interfaces/APIResponse';
+import { getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
+import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
+import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
-
-import getToken from '../auth/getToken';
-import { insertGame, readItem } from '../apis/NotionApi';
-import { getGameTimeToBeat } from '../apis/HLTBApi';
-import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
+import { GamesDatabase } from '../interfaces/GamesDatabase';
 
 export class APIConsumer {
   constructor() { };
 
-  private async getGameInfo(gameName: string, requestOptions: ApicalypseConfig): Promise<APIResponse[]> {
-    const response = apicalypse(requestOptions);
-    const apiResponse = await response.fields([
-      'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
-    ]).search(gameName).limit(1).request(`${process.env.API_BASE_URL}/games`);
-
-    return apiResponse.data;
-  }
-
-  private async getInfosByID(data: APIResponse[], requestOptions: ApicalypseConfig): Promise<GameInfo[]> {
-    const response = apicalypse(requestOptions);
-
-    const allPromises = data.map(async game => {
-      const gameGenreFormatted = game.genres.toString();
-      const promisesGenre = await response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
-
-      const gamePlatformFormatted = game.platforms.toString();
-      const promisesPlatform = await response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
-
-      return { gameId: game.id, promisesGenre, promisesPlatform };
-    });
-
-    const gamesGenresAndPlatform = await Promise.all(allPromises);
-
-    const gameInfoPromises = data.map(async game => {
-      const unixTimeStampToMillis = new Date(game.first_release_date * 1000);
-      const timesToBeat = await getGameTimeToBeat(game.name);
-
-      const actualGameInfo = {
-        name: game.name,
-        platform: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesPlatform.data,
-        genres: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesGenre.data,
-        rating: game.total_rating,
-        releaseDate: unixTimeStampToMillis,
-        timeToBeat: {
-          main: timesToBeat?.main || 0,
-          MainExtra: timesToBeat?.MainExtra || 0,
-          Completionist: timesToBeat?.Completionist || 0,
-        },
-      } as GameInfo;
-
-      return actualGameInfo;
-    });
-
-    const gamesInfo = await Promise.all(gameInfoPromises);
+  private async getGameInfo(gameName: string): Promise<GameInfo> {
+    const gamesInfo = await getGameInfo(gameName);
 
     return gamesInfo;
   }
 
-  private async insertNewGameProcess(gameName: string, requestOptions: ApicalypseConfig) {
-    const gamesInfo = await this.getGameInfo(gameName, requestOptions);
+  // private async insertNewGameProcess(gameName: string, requestOptions: ApicalypseConfig) {
+  //   const gamesInfo = await this.getGameInfo(gameName, requestOptions);
 
-    const gameInformationComplete = await this.getInfosByID(gamesInfo, requestOptions);
+  //   const gameInformationComplete = await this.getInfosByID(gamesInfo, requestOptions);
 
-    const gamesInfoPromisees = gameInformationComplete.map(async gameInfo => {
-      const platformNames = gameInfo.platform?.map(platform => platform.name);
-      const releaseDate = gameInfo.releaseDate.toISOString();
-      const timeToBeat = gameInfo.timeToBeat;
+  //   const gamesInfoPromisees = gameInformationComplete.map(async gameInfo => {
+  //     const platformNames = gameInfo.platform?.map(platform => platform.name);
+  //     const releaseDate = gameInfo.releaseDate.toISOString();
+  //     const timeToBeat = gameInfo.timeToBeat;
 
-      return insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
-    });
+  //     return insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
+  //   });
 
-    const gamesAdd = await Promise.all(gamesInfoPromisees);
+  //   const gamesAdd = await Promise.all(gamesInfoPromisees);
 
-    const gamesAddResult = gamesAdd.filter(games => games !== undefined) as CreatePageResponse[];
+  //   const gamesAddResult = gamesAdd.filter(games => games !== undefined) as CreatePageResponse[];
 
-    return gamesAddResult;
-  }
+  //   return gamesAddResult;
+  // }
 
-  public async insertNewGame(title: string): Promise<CreatePageResponse[]> {
-    const token = await getToken();
-    const { access_token, expiresIn, tokenType } = token;
+  // public async insertNewGame(title: string): Promise<CreatePageResponse[]> {
+  //   const requestOptions = await this.getRequestOptions();
 
-    const requestOptions: ApicalypseConfig = {
-      baseURL: process.env.API_BASE_URL,
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Client-ID': process.env.CLIENT_ID,
-        'Authorization': `Bearer ${access_token}`
-      },
-    };
+  //   const gamesInfo = await this.insertNewGameProcess(title, requestOptions)
 
-    const gamesInfo = await this.insertNewGameProcess(title, requestOptions)
-
-    return gamesInfo;
-  }
+  //   return gamesInfo;
+  // }
 
   public async searchGame(title: string) {
     return await readItem(title);
+  }
+
+  public async updateNewGamesInfo(): Promise<void> {
+    const newGamesPromise = searchForNewGames();
+    const platformOptionsResponsePromise = getPlatformsOptions();
+    const statusOptionsPromise = getStatusOptions();
+
+    const [newGames, platformOptionsResponse, statusOptions] = await Promise.all([newGamesPromise, platformOptionsResponsePromise, statusOptionsPromise]);
+
+    const updateGamesInfoPromises = newGames.map(async game => {
+
+      const gameProperties = game.properties as GamesDatabase;
+      const gameTitle = gameProperties.game_title.title[0].text.content;
+
+      const gameInfo = await this.getGameInfo(gameTitle);
+
+      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => {
+        return gameInfo.platform?.find(platformGame => platformGame.name === platform.name
+          || (platformGame.name.includes('PC') && platform.name === 'Steam'))
+      });
+
+      const updateInfo = {
+        page_id: game.id,
+        title: gameInfo.name,
+        timeToBeat: gameInfo.timeToBeat,
+        releaseDate: gameInfo.releaseDate,
+        platform: availablePlatforms,
+        obtained_data: true,
+      } as IUpdateGameInfo;
+
+      updateGameInfo(updateInfo, statusOptions);
+    });
+
+    await Promise.all(updateGamesInfoPromises);
   }
 }

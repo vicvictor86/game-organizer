@@ -2,15 +2,16 @@ import { Client } from "@notionhq/client";
 import { AppError } from "../shared/errors/AppError";
 import { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
+import { CreatePageResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 
-interface PlatformOptions {
+export interface PlatformOptions {
   id: string;
 
   name: string;
 }
 
-interface PlatformOptionsResponse {
+export interface PlatformOptionsResponse {
   platformOptions: PlatformOptions[];
 
   undefinedPlatform: PlatformOptions;
@@ -23,6 +24,7 @@ interface Request {
 }
 
 interface gamesProperties {
+  id: string;
   properties: {
     title: string,
     platform: string,
@@ -50,6 +52,7 @@ interface IPlatformProperties {
     }
   }
 }
+
 const notion = new Client({
   auth: process.env.NOTION_KEY,
 })
@@ -105,6 +108,24 @@ export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
   }
 
   return { platformOptions: platformsIdsWithName, undefinedPlatform };
+}
+
+export async function getStatusOptions(): Promise<SelectOptions[]> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const gameDatabaseInfo = await notion.databases.retrieve({
+    database_id: databaseGameID,
+  });
+
+  const gamesAny = gameDatabaseInfo as any;
+  const gamesWithProperties = gamesAny as gamesProperties;
+
+  const statusOptions = gamesWithProperties.properties.status.select.options;
+
+  return statusOptions;
 }
 
 export async function insertGame(gameName: string, gameInfo: Request): Promise<CreatePageResponse | undefined> {
@@ -172,4 +193,75 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
   console.log(`The game ${gameName} inserted with success!`)
 
   return response;
+}
+
+export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[]): Promise<void> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const wantToPlayId = statusOptions.find(status => status.name === 'Want to Play')?.id;
+
+  const releaseDateWithoutTime = new Date(game.releaseDate).toISOString().substring(0, 10);
+
+  const platformsToAdd = game.platform.map(platform => {
+    return {
+      id: platform.id,
+    }
+  });
+
+  await notion.pages.update({
+    page_id: game.page_id,
+    properties: {
+      game_title: {
+        title: [
+          {
+            type: 'text',
+            text: {
+              content: game.title,
+            },
+          },
+        ],
+      },
+      status: {
+        select: {
+          id: wantToPlayId || statusOptions[0].id,
+        },
+      },
+      platform: {
+        relation: platformsToAdd,
+      },
+      time_to_beat: {
+        number: game.timeToBeat.MainExtra,
+      },
+      release_date: {
+        date: {
+          start: releaseDateWithoutTime,
+        },
+      },
+      obtained_data: {
+        checkbox: true,
+      }
+    }
+  });
+}
+
+export async function searchForNewGames(): Promise<PageObjectResponse[]> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const queryAllNewGames = await notion.databases.query({
+    database_id: databaseGameID,
+    filter: {
+      property: 'obtained_data',
+      checkbox: {
+        equals: false,
+      },
+    }
+  });
+
+  return queryAllNewGames.results as PageObjectResponse[];
 }
