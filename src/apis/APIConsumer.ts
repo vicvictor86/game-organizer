@@ -3,12 +3,30 @@ import APIResponse from '../interfaces/APIResponse';
 import GameInfo from '../interfaces/GameInfo';
 
 import getToken from '../auth/getToken';
-import { insertGame, readItem } from '../apis/NotionApi';
+import { insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
 import { getGameTimeToBeat } from '../apis/HLTBApi';
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
+import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 
 export class APIConsumer {
   constructor() { };
+
+  private async getRequestOptions(): Promise<ApicalypseConfig> {
+    const token = await getToken();
+    const { access_token, expiresIn, tokenType } = token;
+
+    const requestOptions: ApicalypseConfig = {
+      baseURL: process.env.API_BASE_URL,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Client-ID': process.env.CLIENT_ID,
+        'Authorization': `Bearer ${access_token}`
+      },
+    };
+
+    return requestOptions;
+  }
 
   private async getGameInfo(gameName: string, requestOptions: ApicalypseConfig): Promise<APIResponse[]> {
     const response = apicalypse(requestOptions);
@@ -80,18 +98,7 @@ export class APIConsumer {
   }
 
   public async insertNewGame(title: string): Promise<CreatePageResponse[]> {
-    const token = await getToken();
-    const { access_token, expiresIn, tokenType } = token;
-
-    const requestOptions: ApicalypseConfig = {
-      baseURL: process.env.API_BASE_URL,
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Client-ID': process.env.CLIENT_ID,
-        'Authorization': `Bearer ${access_token}`
-      },
-    };
+    const requestOptions = await this.getRequestOptions();
 
     const gamesInfo = await this.insertNewGameProcess(title, requestOptions)
 
@@ -100,5 +107,31 @@ export class APIConsumer {
 
   public async searchGame(title: string) {
     return await readItem(title);
+  }
+
+  public async updateNewGamesInfo(): Promise<void> {
+    const newGames = await searchForNewGames();
+    const requestOptions = await this.getRequestOptions();
+
+    const updateGamesInfoPromises = newGames.map(async game => {
+
+      const gameTitle = game.properties.game_title.title[0].text.content;
+
+      const gameInfo = await this.getGameInfo(gameTitle, requestOptions);
+      const gameInformationComplete = await this.getInfosByID(gameInfo, requestOptions);
+
+      const updateInfo = {
+        page_id: game.id,
+        title: gameInformationComplete[0].name,
+        timeToBeat: gameInformationComplete[0].timeToBeat,
+        releaseDate: gameInformationComplete[0].releaseDate,
+        obtained_data: true,
+      } as IUpdateGameInfo;
+
+      console.log(gameInformationComplete[0].platform)
+      updateGameInfo(updateInfo);
+    });
+
+    await Promise.all(updateGamesInfoPromises);
   }
 }

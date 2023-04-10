@@ -2,7 +2,8 @@ import { Client } from "@notionhq/client";
 import { AppError } from "../shared/errors/AppError";
 import { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
+import { CreatePageResponse, PageObjectResponse, PartialPageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 
 interface PlatformOptions {
   id: string;
@@ -23,6 +24,7 @@ interface Request {
 }
 
 interface gamesProperties {
+  id: string;
   properties: {
     title: string,
     platform: string,
@@ -50,6 +52,7 @@ interface IPlatformProperties {
     }
   }
 }
+
 const notion = new Client({
   auth: process.env.NOTION_KEY,
 })
@@ -172,4 +175,66 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
   console.log(`The game ${gameName} inserted with success!`)
 
   return response;
+}
+
+export async function updateGameInfo(game: IUpdateGameInfo): Promise<void> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const gameDatabaseInfo = await notion.pages.update({
+    page_id: game.page_id,
+    properties: {
+      game_title: {
+        title: [
+          {
+            type: 'text',
+            text: {
+              content: game.title,
+            },
+          },
+        ],
+      },
+      // status: {
+      //   select: {
+      //     name: 'Want to Play',
+      //   },
+      // },
+      time_to_beat: {
+        number: game.timeToBeat.main,
+      },
+      release_date: {
+        date: {
+          start: new Date(game.releaseDate).toISOString(),
+        },
+      },
+    //   obtained_data: {
+    //     checkbox: true,
+    //   }
+    }
+  });
+
+  console.log("chegou aqui")
+}
+
+export async function searchForNewGames(): Promise<(PageObjectResponse | PartialPageObjectResponse)[]> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const queryAllNewGames = await notion.databases.query({
+    database_id: databaseGameID,
+    filter: {
+      property: 'obtained_data',
+      checkbox: {
+        equals: false,
+      },
+    }
+  });
+
+  // console.log(queryAllNewGames.results)
+
+  return queryAllNewGames.results;
 }
