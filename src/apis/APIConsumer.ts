@@ -3,7 +3,7 @@ import APIResponse from '../interfaces/APIResponse';
 import GameInfo from '../interfaces/GameInfo';
 
 import getToken from '../auth/getToken';
-import { getPlatformsOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
+import { getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
 import { getGameTimeToBeat } from '../apis/HLTBApi';
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
@@ -28,53 +28,43 @@ export class APIConsumer {
     return requestOptions;
   }
 
-  private async getGameInfo(gameName: string, requestOptions: ApicalypseConfig): Promise<APIResponse[]> {
+  private async getGameInfo(gameName: string, requestOptions: ApicalypseConfig): Promise<APIResponse> {
     const response = apicalypse(requestOptions);
     const apiResponse = await response.fields([
       'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
     ]).search(gameName).limit(1).request(`${process.env.API_BASE_URL}/games`);
 
-    return apiResponse.data;
+    return apiResponse.data[0];
   }
 
-  private async getInfosByID(data: APIResponse[], requestOptions: ApicalypseConfig): Promise<GameInfo[]> {
+  private async getInfosByID(data: APIResponse, requestOptions: ApicalypseConfig): Promise<GameInfo> {
     const response = apicalypse(requestOptions);
 
-    const allPromises = data.map(async game => {
-      const gameGenreFormatted = game.genres.toString();
-      const promisesGenre = await response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
+    const gameGenreFormatted = data.genres.toString();
+    const genresPromise = response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
 
-      const gamePlatformFormatted = game.platforms.toString();
-      const promisesPlatform = await response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
+    const gamePlatformFormatted = data.platforms.toString();
+    const platformsPromise = response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
 
-      return { gameId: game.id, promisesGenre, promisesPlatform };
-    });
+    const unixTimeStampToMillis = new Date(data.first_release_date * 1000);
+    const timesToBeatPromise = getGameTimeToBeat(data.name);
 
-    const gamesGenresAndPlatform = await Promise.all(allPromises);
+    const [genres, platforms, timesToBeat] = await Promise.all([genresPromise, platformsPromise, timesToBeatPromise]);
 
-    const gameInfoPromises = data.map(async game => {
-      const unixTimeStampToMillis = new Date(game.first_release_date * 1000);
-      const timesToBeat = await getGameTimeToBeat(game.name);
+    const actualGameInfo = {
+      name: data.name,
+      platform: platforms.data,
+      genres: genres.data,
+      rating: data.total_rating,
+      releaseDate: unixTimeStampToMillis,
+      timeToBeat: {
+        main: timesToBeat?.main || 0,
+        MainExtra: timesToBeat?.MainExtra || 0,
+        Completionist: timesToBeat?.Completionist || 0,
+      },
+    } as GameInfo;
 
-      const actualGameInfo = {
-        name: game.name,
-        platform: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesPlatform.data,
-        genres: gamesGenresAndPlatform.find(gameResolve => gameResolve.gameId === game.id)?.promisesGenre.data,
-        rating: game.total_rating,
-        releaseDate: unixTimeStampToMillis,
-        timeToBeat: {
-          main: timesToBeat?.main || 0,
-          MainExtra: timesToBeat?.MainExtra || 0,
-          Completionist: timesToBeat?.Completionist || 0,
-        },
-      } as GameInfo;
-
-      return actualGameInfo;
-    });
-
-    const gamesInfo = await Promise.all(gameInfoPromises);
-
-    return gamesInfo;
+    return actualGameInfo;
   }
 
   private async insertNewGameProcess(gameName: string, requestOptions: ApicalypseConfig) {
@@ -110,8 +100,12 @@ export class APIConsumer {
   }
 
   public async updateNewGamesInfo(): Promise<void> {
-    const newGames = await searchForNewGames();
-    const requestOptions = await this.getRequestOptions();
+    const newGamesPromise = searchForNewGames();
+    const requestOptionsPromise = this.getRequestOptions();
+    const platformOptionsResponsePromise = getPlatformsOptions();
+    const statusOptionsPromise = getStatusOptions();
+
+    const [newGames, requestOptions, platformOptionsResponse, statusOptions] = await Promise.all([newGamesPromise, requestOptionsPromise, platformOptionsResponsePromise, statusOptionsPromise]);
 
     const updateGamesInfoPromises = newGames.map(async game => {
 
@@ -120,20 +114,18 @@ export class APIConsumer {
       const gameInfo = await this.getGameInfo(gameTitle, requestOptions);
       const gameInformationComplete = await this.getInfosByID(gameInfo, requestOptions);
 
-      const platformOptionsResponse = await getPlatformsOptions();
-      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => gameInformationComplete[0].platform?.find(platformGame => platformGame.name === platform.name));
-      console.log(availablePlatforms)
+      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => gameInformationComplete.platform?.find(platformGame => platformGame.name === platform.name));
 
       const updateInfo = {
         page_id: game.id,
-        title: gameInformationComplete[0].name,
-        timeToBeat: gameInformationComplete[0].timeToBeat,
-        releaseDate: gameInformationComplete[0].releaseDate,
+        title: gameInformationComplete.name,
+        timeToBeat: gameInformationComplete.timeToBeat,
+        releaseDate: gameInformationComplete.releaseDate,
         platform: availablePlatforms,
         obtained_data: true,
       } as IUpdateGameInfo;
 
-      updateGameInfo(updateInfo);
+      updateGameInfo(updateInfo, statusOptions);
     });
 
     await Promise.all(updateGamesInfoPromises);

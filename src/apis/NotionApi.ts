@@ -125,8 +125,6 @@ export async function getStatusOptions(): Promise<SelectOptions[]> {
 
   const statusOptions = gamesWithProperties.properties.status.select.options;
 
-  console.log(statusOptions);
-
   return statusOptions;
 }
 
@@ -197,16 +195,23 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
   return response;
 }
 
-export async function updateGameInfo(game: IUpdateGameInfo): Promise<void> {
+export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[]): Promise<void> {
   if (!databaseGameID) {
     console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 
-  const statusOptions = await getStatusOptions();
   const wantToPlayId = statusOptions.find(status => status.name === 'Want to Play')?.id;
 
-  const gameDatabaseInfo = await notion.pages.update({
+  const releaseDateWithoutTime = new Date(game.releaseDate).toISOString().substring(0, 10);
+
+  const platformsToAdd = game.platform.map(platform => {
+    return {
+      id: platform.id,
+    }
+  });
+
+  await notion.pages.update({
     page_id: game.page_id,
     properties: {
       game_title: {
@@ -225,27 +230,23 @@ export async function updateGameInfo(game: IUpdateGameInfo): Promise<void> {
         },
       },
       platform: {
-        relation: [
-          {
-            id: game.platform[0].id,
-          },
-        ],
+        relation: platformsToAdd,
       },
       time_to_beat: {
         number: game.timeToBeat.main,
       },
       release_date: {
         date: {
-          start: new Date(game.releaseDate).toISOString(),
+          start: releaseDateWithoutTime,
         },
       },
-    //   obtained_data: {
-    //     checkbox: true,
-    //   }
+      obtained_data: {
+        checkbox: true,
+      }
     }
   });
 
-  console.log("chegou aqui")
+  // console.log("chegou aqui")
 }
 
 export async function searchForNewGames(): Promise<(PageObjectResponse | PartialPageObjectResponse)[]> {
