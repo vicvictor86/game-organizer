@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import gamesRouter from '../../../../modules/http/routes/games.routes';
+import gamesRouter from '../../../../modules/games/http/routes/games.routes';
 
 const routes = Router();
 

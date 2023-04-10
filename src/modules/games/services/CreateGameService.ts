@@ -1,6 +1,6 @@
 import { inject, injectable } from "tsyringe";
-import { AppError } from "../../shared/errors/AppError";
-import { IAPIConsumer } from "../../interfaces/IAPIConsumer";
+import { AppError } from "../../../shared/errors/AppError";
+import { IAPIConsumer } from "../../../interfaces/IAPIConsumer";
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 
 
@@ -11,7 +11,7 @@ export default class CreateGameService {
     private APIConsumer: IAPIConsumer,
   ) { }
 
-  public async execute(title : string): Promise<CreatePageResponse[]> {
+  public async execute(title : string): Promise<CreatePageResponse | undefined> {
     const gameInfo = await this.APIConsumer.insertNewGame(title);
 
     if (!gameInfo) {

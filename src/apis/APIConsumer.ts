@@ -3,8 +3,10 @@ import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
+import { IAPIConsumer } from '../interfaces/IAPIConsumer';
+import { CreatePageResponse } from '@notionhq/client/build/src/api-endpoints';
 
-export class APIConsumer {
+export class APIConsumer implements IAPIConsumer {
   constructor() { };
 
   private async getGameInfo(gameName: string): Promise<GameInfo> {
@@ -13,33 +15,21 @@ export class APIConsumer {
     return gamesInfo;
   }
 
-  // private async insertNewGameProcess(gameName: string, requestOptions: ApicalypseConfig) {
-  //   const gamesInfo = await this.getGameInfo(gameName, requestOptions);
+  private async insertNewGameProcess(gameName: string) {
+    const gameInfo = await this.getGameInfo(gameName);
 
-  //   const gameInformationComplete = await this.getInfosByID(gamesInfo, requestOptions);
+    const platformNames = gameInfo.platform?.map(platform => platform.name);
+    const releaseDate = gameInfo.releaseDate.toISOString();
+    const timeToBeat = gameInfo.timeToBeat;
 
-  //   const gamesInfoPromisees = gameInformationComplete.map(async gameInfo => {
-  //     const platformNames = gameInfo.platform?.map(platform => platform.name);
-  //     const releaseDate = gameInfo.releaseDate.toISOString();
-  //     const timeToBeat = gameInfo.timeToBeat;
+    return await insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
+  }
 
-  //     return insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
-  //   });
+  public async insertNewGame(title: string): Promise<CreatePageResponse | undefined> {
+    const gamesInfo = await this.insertNewGameProcess(title)
 
-  //   const gamesAdd = await Promise.all(gamesInfoPromisees);
-
-  //   const gamesAddResult = gamesAdd.filter(games => games !== undefined) as CreatePageResponse[];
-
-  //   return gamesAddResult;
-  // }
-
-  // public async insertNewGame(title: string): Promise<CreatePageResponse[]> {
-  //   const requestOptions = await this.getRequestOptions();
-
-  //   const gamesInfo = await this.insertNewGameProcess(title, requestOptions)
-
-  //   return gamesInfo;
-  // }
+    return gamesInfo;
+  }
 
   public async searchGame(title: string) {
     return await readItem(title);
