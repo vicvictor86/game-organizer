@@ -233,7 +233,7 @@ export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: Selec
         relation: platformsToAdd,
       },
       time_to_beat: {
-        number: game.timeToBeat.main,
+        number: game.timeToBeat.MainExtra,
       },
       release_date: {
         date: {

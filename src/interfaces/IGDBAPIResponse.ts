@@ -1,4 +1,4 @@
-export default interface APIResponse {
+export interface IGDBAPIResponse {
   id: number;
   name: string;
   total_rating: number;
