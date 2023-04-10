@@ -1,7 +1,7 @@
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export interface IAPIConsumer {
-  insertNewGame(title: string): Promise<CreatePageResponse[]>;
+  insertNewGame(title: string): Promise<CreatePageResponse | undefined>;
   searchGame(title: string): Promise<any>;
   updateNewGamesInfo(): Promise<void>;
 }
