@@ -1,8 +1,8 @@
 import { getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
-import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
+import { GamesDatabase } from '../interfaces/GamesDatabase';
 
 export class APIConsumer {
   constructor() { };
@@ -54,11 +54,15 @@ export class APIConsumer {
 
     const updateGamesInfoPromises = newGames.map(async game => {
 
-      const gameTitle = game.properties.game_title.title[0].text.content;
+      const gameProperties = game.properties as GamesDatabase;
+      const gameTitle = gameProperties.game_title.title[0].text.content;
 
       const gameInfo = await this.getGameInfo(gameTitle);
 
-      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => gameInfo.platform?.find(platformGame => platformGame.name === platform.name));
+      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => {
+        return gameInfo.platform?.find(platformGame => platformGame.name === platform.name
+          || (platformGame.name.includes('PC') && platform.name === 'Steam'))
+      });
 
       const updateInfo = {
         page_id: game.id,

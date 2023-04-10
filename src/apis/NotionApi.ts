@@ -2,7 +2,7 @@ import { Client } from "@notionhq/client";
 import { AppError } from "../shared/errors/AppError";
 import { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { CreatePageResponse, PageObjectResponse, PartialPageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { CreatePageResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 
 export interface PlatformOptions {
@@ -11,7 +11,7 @@ export interface PlatformOptions {
   name: string;
 }
 
-interface PlatformOptionsResponse {
+export interface PlatformOptionsResponse {
   platformOptions: PlatformOptions[];
 
   undefinedPlatform: PlatformOptions;
@@ -245,11 +245,9 @@ export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: Selec
       }
     }
   });
-
-  // console.log("chegou aqui")
 }
 
-export async function searchForNewGames(): Promise<(PageObjectResponse | PartialPageObjectResponse)[]> {
+export async function searchForNewGames(): Promise<PageObjectResponse[]> {
   if (!databaseGameID) {
     console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
@@ -265,7 +263,5 @@ export async function searchForNewGames(): Promise<(PageObjectResponse | Partial
     }
   });
 
-  // console.log(queryAllNewGames.results)
-
-  return queryAllNewGames.results;
+  return queryAllNewGames.results as PageObjectResponse[];
 }
