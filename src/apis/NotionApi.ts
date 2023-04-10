@@ -5,7 +5,7 @@ import { SelectOptions } from '../interfaces/SelectOptions';
 import { CreatePageResponse, PageObjectResponse, PartialPageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 
-interface PlatformOptions {
+export interface PlatformOptions {
   id: string;
 
   name: string;
@@ -110,6 +110,26 @@ export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
   return { platformOptions: platformsIdsWithName, undefinedPlatform };
 }
 
+export async function getStatusOptions(): Promise<SelectOptions[]> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  };
+
+  const gameDatabaseInfo = await notion.databases.retrieve({
+    database_id: databaseGameID,
+  });
+
+  const gamesAny = gameDatabaseInfo as any;
+  const gamesWithProperties = gamesAny as gamesProperties;
+
+  const statusOptions = gamesWithProperties.properties.status.select.options;
+
+  console.log(statusOptions);
+
+  return statusOptions;
+}
+
 export async function insertGame(gameName: string, gameInfo: Request): Promise<CreatePageResponse | undefined> {
   if (!databaseGameID || !databasePlatformID) {
     console.log('Error: No database ID');
@@ -183,6 +203,9 @@ export async function updateGameInfo(game: IUpdateGameInfo): Promise<void> {
     throw new AppError('Error: No database ID');
   };
 
+  const statusOptions = await getStatusOptions();
+  const wantToPlayId = statusOptions.find(status => status.name === 'Want to Play')?.id;
+
   const gameDatabaseInfo = await notion.pages.update({
     page_id: game.page_id,
     properties: {
@@ -196,11 +219,18 @@ export async function updateGameInfo(game: IUpdateGameInfo): Promise<void> {
           },
         ],
       },
-      // status: {
-      //   select: {
-      //     name: 'Want to Play',
-      //   },
-      // },
+      status: {
+        select: {
+          id: wantToPlayId || statusOptions[0].id,
+        },
+      },
+      platform: {
+        relation: [
+          {
+            id: game.platform[0].id,
+          },
+        ],
+      },
       time_to_beat: {
         number: game.timeToBeat.main,
       },

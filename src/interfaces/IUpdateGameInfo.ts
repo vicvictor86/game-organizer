@@ -1,3 +1,4 @@
+import { PlatformOptions } from "../apis/NotionApi";
 import { TimesToBeat } from "./GameInfo";
 
 export interface IUpdateGameInfo {
@@ -6,5 +7,6 @@ export interface IUpdateGameInfo {
   // status: string;
   timeToBeat: TimesToBeat;
   releaseDate: Date;
+  platform: PlatformOptions[];
   obtained_data: boolean;
 }

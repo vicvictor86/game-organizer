@@ -3,7 +3,7 @@ import APIResponse from '../interfaces/APIResponse';
 import GameInfo from '../interfaces/GameInfo';
 
 import getToken from '../auth/getToken';
-import { insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
+import { getPlatformsOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
 import { getGameTimeToBeat } from '../apis/HLTBApi';
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
@@ -120,15 +120,19 @@ export class APIConsumer {
       const gameInfo = await this.getGameInfo(gameTitle, requestOptions);
       const gameInformationComplete = await this.getInfosByID(gameInfo, requestOptions);
 
+      const platformOptionsResponse = await getPlatformsOptions();
+      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => gameInformationComplete[0].platform?.find(platformGame => platformGame.name === platform.name));
+      console.log(availablePlatforms)
+
       const updateInfo = {
         page_id: game.id,
         title: gameInformationComplete[0].name,
         timeToBeat: gameInformationComplete[0].timeToBeat,
         releaseDate: gameInformationComplete[0].releaseDate,
+        platform: availablePlatforms,
         obtained_data: true,
       } as IUpdateGameInfo;
 
-      console.log(gameInformationComplete[0].platform)
       updateGameInfo(updateInfo);
     });
 
