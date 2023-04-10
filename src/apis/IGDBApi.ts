@@ -34,10 +34,10 @@ async function getIdsGameInfo(gameName: string, requestOptions: ApicalypseConfig
 async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseConfig): Promise<GameInfo> {
   const response = apicalypse(requestOptions);
 
-  const gameGenreFormatted = data.genres.toString();
+  const gameGenreFormatted = data.genres?.toString();
   const genresPromise = response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
 
-  const gamePlatformFormatted = data.platforms.toString();
+  const gamePlatformFormatted = data.platforms?.toString();
   const platformsPromise = response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
 
   const unixTimeStampToMillis = new Date(data.first_release_date * 1000);
