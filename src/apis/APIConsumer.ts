@@ -1,13 +1,23 @@
-import { getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
+import { getAllGames, getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
-import { CreatePageResponse } from '@notionhq/client/build/src/api-endpoints';
+import { CreatePageResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 export class APIConsumer implements IAPIConsumer {
+  private gamesInDatabase: PageObjectResponse[] = [];
+  
   constructor() { };
+
+  public async getGamesInDatabase(): Promise<PageObjectResponse[]> {
+    if (this.gamesInDatabase.length === 0) {
+      this.gamesInDatabase = await getAllGames();
+    }
+
+    return this.gamesInDatabase;
+  }
 
   private async getGameInfo(gameName: string): Promise<GameInfo> {
     const gamesInfo = await getGameInfo(gameName);
@@ -48,6 +58,25 @@ export class APIConsumer implements IAPIConsumer {
       const gameTitle = gameProperties.game_title.title[0].text.content;
 
       const gameInfo = await this.getGameInfo(gameTitle);
+
+      const gameAlreadyExists = this.gamesInDatabase.find(game => {
+        const gameProperties = game.properties as GamesDatabase;
+        
+        return gameProperties.game_title.title[0].text.content === gameInfo.name
+      });
+
+      if(gameAlreadyExists) {
+        updateGameInfo({
+          page_id: game.id,
+          title: `The game ${gameInfo.name} already been added`,
+          platform: [],
+          releaseDate: new Date(),
+          timeToBeat: { Completionist: 0, main: 0, MainExtra: 0 },
+          obtained_data: true,
+        }, statusOptions, 'Already Added');
+
+        return;
+      }
 
       const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => {
         return gameInfo.platform?.find(platformGame => platformGame.name === platform.name

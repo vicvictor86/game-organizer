@@ -12,6 +12,7 @@ import { APIConsumer } from '../../../apis/APIConsumer';
 
 const app = express();
 const apiConsumer = new APIConsumer();
+apiConsumer.getGamesInDatabase();
 
 app.use(express.json());
 app.use(routes);

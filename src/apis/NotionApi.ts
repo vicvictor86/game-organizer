@@ -79,6 +79,19 @@ export async function readItem(title: string) {
   }
 }
 
+export async function getAllGames(): Promise<PageObjectResponse[]> {
+  if (!databaseGameID) {
+    console.log('Error: No database ID');
+    throw new AppError('Error: No database ID');
+  }
+
+  const gamesInDatabase = await notion.databases.query({
+    database_id: databaseGameID,
+  });
+
+  return gamesInDatabase.results as PageObjectResponse[];
+}
+
 export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
   if (!databasePlatformID) {
     console.log('Error: No database ID');
@@ -195,14 +208,14 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
   return response;
 }
 
-export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[]): Promise<void> {
+export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[], statusName?: string): Promise<void> {
   if (!databaseGameID) {
     console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 
+  const status = statusOptions.find(status => status.name === statusName)?.id;
   const wantToPlayId = statusOptions.find(status => status.name === 'Want to Play')?.id;
-
   const releaseDateWithoutTime = new Date(game.releaseDate).toISOString().substring(0, 10);
 
   const platformsToAdd = game.platform.map(platform => {
@@ -226,7 +239,7 @@ export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: Selec
       },
       status: {
         select: {
-          id: wantToPlayId || statusOptions[0].id,
+          id: status || wantToPlayId || statusOptions[0].id,
         },
       },
       platform: {
