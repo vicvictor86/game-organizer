@@ -4,6 +4,8 @@ import IntegrationController from "../controllers/IntegrationController";
 const integrationRouter = Router();
 const integrationController = new IntegrationController();
 
+console.log(integrationController)
+
 integrationRouter.get('/', integrationController.index);
 // integrationRouter.post('/', integrationController.create);
 

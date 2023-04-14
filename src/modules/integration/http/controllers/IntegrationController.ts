@@ -7,10 +7,10 @@ interface NotionResponse {
   access_token: string;
   owner: UserObjectResponse;
   workspace_id: string;
-  bot_id: string;  
+  bot_id: string;
 }
 
-export default class GameController {
+export default class IntegrationController {
   // public async create(request: Request, response: Response): Promise<Response> {
   //   const { title } = request.body;
   //   const createGameService = container.resolve(CreateGameService);
@@ -23,16 +23,22 @@ export default class GameController {
   public async index(request: Request, response: Response): Promise<Response> {
     const { code } = request.params;
 
+    const encode = (str: string): string => Buffer.from(str, 'utf-8').toString('base64');
+
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
-      client_id: process.env.CLIENT_ID_OAUTH,
-    });
+    },
+      {
+        headers: {
+          Authorization: 'Basic ' + encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`),
+        }
+      });
 
     const { access_token, owner, workspace_id, bot_id } = notionResponse.data;
 
     //Salvar no banco de dados as infos acima
 
-    return response.status(200).json({ message: {code, access_token, owner, workspace_id, bot_id }});
+    return response.status(200).json();
   }
 }
