@@ -26,7 +26,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     }
 
     const errorData = err as any;
-    console.log(errorData.data.error);
+    console.log(errorData);
     console.log(err.stack);
     console.log(err.message);
 

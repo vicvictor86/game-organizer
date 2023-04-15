@@ -22,18 +22,20 @@ export default class IntegrationController {
 
   public async index(request: Request, response: Response): Promise<Response> {
     const { code } = request.query;
-
-    const encode = (str: string): string => Buffer.from(str, 'utf-8').toString('base64');
-
+    
+    const encode = (str: string): string => Buffer.from(str).toString('base64');
+    
+    console.log(encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`))
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
     },
       {
         headers: {
-          Authorization: 'Basic ' + `${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`,
+          Authorization: 'Basic ' + encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`),
         }
       });
+
 
     const { access_token, owner, workspace_id, bot_id } = notionResponse.data;
 
