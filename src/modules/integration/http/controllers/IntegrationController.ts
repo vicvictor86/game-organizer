@@ -29,11 +29,11 @@ export default class IntegrationController {
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
+      
     },
       {
-        headers: {
-          Authorization: 'Basic ' + encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`),
-        }
+        auth: { username: process.env.CLIENT_ID_OAUTH || "", password: process.env.CLIENT_SECRET_OAUTH || "" },
+        headers: { "Content-Type": "application/json" },
       });
 
 
