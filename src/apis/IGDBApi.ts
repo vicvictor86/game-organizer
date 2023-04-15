@@ -61,9 +61,12 @@ async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseCon
   return actualGameInfo;
 }
 
-export async function getGameInfo(gameName: string): Promise<GameInfo> {
+export async function getGameInfo(gameName: string): Promise<GameInfo | undefined> {
   const requestOptions = await getRequestOptions();
   const gamesIdsInfo = await getIdsGameInfo(gameName, requestOptions);
+
+  if(!gamesIdsInfo) return undefined;
+
   const gameInfo = await getInfosByID(gamesIdsInfo, requestOptions);
 
   return gameInfo;
