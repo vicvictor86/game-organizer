@@ -25,6 +25,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
         });
     }
 
+    console.log(err);
     console.log(err.stack);
     console.log(err.message);
 

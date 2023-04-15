@@ -21,7 +21,6 @@ export default class IntegrationController {
   // }
 
   public async index(request: Request, response: Response): Promise<Response> {
-    console.log(request);
     const { code } = request.query;
 
     const encode = (str: string): string => Buffer.from(str, 'utf-8').toString('base64');
