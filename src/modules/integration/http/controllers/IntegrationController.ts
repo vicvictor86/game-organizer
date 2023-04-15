@@ -31,7 +31,7 @@ export default class IntegrationController {
     },
       {
         headers: {
-          Authorization: 'Basic ' + encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`),
+          Authorization: 'Basic ' + `${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`,
         }
       });
 
