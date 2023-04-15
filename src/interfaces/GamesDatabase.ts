@@ -18,4 +18,5 @@ export interface GamesDatabase extends Record<string, any> {
   time_to_beat: Number;
   release_date?: Date;
   completion_date?: Date;
+  obtained_data?: boolean;
 }

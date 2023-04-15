@@ -8,7 +8,7 @@ import { CreatePageResponse, PageObjectResponse } from '@notionhq/client/build/s
 
 export class APIConsumer implements IAPIConsumer {
   private gamesInDatabase: PageObjectResponse[] = [];
-  
+
   constructor() { };
 
   public async getGamesInDatabase(): Promise<PageObjectResponse[]> {
@@ -19,7 +19,7 @@ export class APIConsumer implements IAPIConsumer {
     return this.gamesInDatabase;
   }
 
-  private async getGameInfo(gameName: string): Promise<GameInfo> {
+  private async getGameInfo(gameName: string): Promise<GameInfo | undefined> {
     const gamesInfo = await getGameInfo(gameName);
 
     return gamesInfo;
@@ -27,6 +27,10 @@ export class APIConsumer implements IAPIConsumer {
 
   private async insertNewGameProcess(gameName: string) {
     const gameInfo = await this.getGameInfo(gameName);
+
+    if(!gameInfo) {
+      return undefined;
+    }
 
     const platformNames = gameInfo.platform?.map(platform => platform.name);
     const releaseDate = gameInfo.releaseDate.toISOString();
@@ -59,13 +63,26 @@ export class APIConsumer implements IAPIConsumer {
 
       const gameInfo = await this.getGameInfo(gameTitle);
 
+      if (!gameInfo) {
+        updateGameInfo({
+          page_id: game.id,
+          title: `The game ${gameTitle} was not found`,
+          platform: [],
+          releaseDate: new Date(),
+          timeToBeat: { Completionist: 0, main: 0, MainExtra: 0 },
+          obtained_data: true,
+        }, statusOptions, 'Not Found');
+
+        return;
+      }
+
       const gameAlreadyExists = this.gamesInDatabase.find(game => {
         const gameProperties = game.properties as GamesDatabase;
-        
-        return gameProperties.game_title.title[0].text.content === gameInfo.name
+
+        return gameProperties.game_title.title[0].text.content === gameInfo.name && gameProperties.obtained_data === true;
       });
 
-      if(gameAlreadyExists) {
+      if (gameAlreadyExists) {
         updateGameInfo({
           page_id: game.id,
           title: `The game ${gameInfo.name} already been added`,
