@@ -5,6 +5,7 @@ import getToken from '../auth/getToken';
 
 import { IGDBAPIResponse } from "../interfaces/IGDBAPIResponse";
 import GameInfo from "../interfaces/GameInfo";
+import { AppError } from "../shared/errors/AppError";
 
 async function getRequestOptions(): Promise<ApicalypseConfig> {
   const { access_token, expiresIn, tokenType } = await getToken();
@@ -65,7 +66,9 @@ export async function getGameInfo(gameName: string): Promise<GameInfo | undefine
   const requestOptions = await getRequestOptions();
   const gamesIdsInfo = await getIdsGameInfo(gameName, requestOptions);
 
-  if(!gamesIdsInfo) return undefined;
+  if(!gamesIdsInfo) {
+    throw new AppError('Game not found');
+  }
 
   const gameInfo = await getInfosByID(gamesIdsInfo, requestOptions);
 

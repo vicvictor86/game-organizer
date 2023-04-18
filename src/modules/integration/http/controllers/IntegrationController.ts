@@ -25,17 +25,14 @@ export default class IntegrationController {
     
     const encode = (str: string): string => Buffer.from(str).toString('base64');
     
-    console.log(encode(`${process.env.CLIENT_ID_OAUTH}:${process.env.CLIENT_SECRET_OAUTH}`))
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
-      
     },
       {
         auth: { username: process.env.CLIENT_ID_OAUTH || "", password: process.env.CLIENT_SECRET_OAUTH || "" },
         headers: { "Content-Type": "application/json" },
       });
-
 
     const { access_token, owner, workspace_id, bot_id } = notionResponse.data;
 

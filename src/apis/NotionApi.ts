@@ -81,7 +81,6 @@ export async function readItem(title: string) {
 
 export async function getAllGames(): Promise<PageObjectResponse[]> {
   if (!databaseGameID) {
-    console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   }
 
@@ -94,7 +93,6 @@ export async function getAllGames(): Promise<PageObjectResponse[]> {
 
 export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
   if (!databasePlatformID) {
-    console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 
@@ -125,7 +123,6 @@ export async function getPlatformsOptions(): Promise<PlatformOptionsResponse> {
 
 export async function getStatusOptions(): Promise<SelectOptions[]> {
   if (!databaseGameID) {
-    console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 
@@ -143,8 +140,7 @@ export async function getStatusOptions(): Promise<SelectOptions[]> {
 
 export async function insertGame(gameName: string, gameInfo: Request): Promise<CreatePageResponse | undefined> {
   if (!databaseGameID || !databasePlatformID) {
-    console.log('Error: No database ID');
-    return undefined;
+    throw new AppError('Error: No database ID');
   };
 
   const gameDatabaseInfo = await notion.databases.retrieve({
@@ -200,6 +196,9 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
           start: gameInfo.releaseDate,
         },
       },
+      obtained_data: {
+        checkbox: true,
+      }
     },
   });
 
@@ -210,7 +209,6 @@ export async function insertGame(gameName: string, gameInfo: Request): Promise<C
 
 export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[], statusName?: string): Promise<void> {
   if (!databaseGameID) {
-    console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 
@@ -262,7 +260,6 @@ export async function updateGameInfo(game: IUpdateGameInfo, statusOptions: Selec
 
 export async function searchForNewGames(): Promise<PageObjectResponse[]> {
   if (!databaseGameID) {
-    console.log('Error: No database ID');
     throw new AppError('Error: No database ID');
   };
 

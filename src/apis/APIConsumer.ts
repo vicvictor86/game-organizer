@@ -5,6 +5,7 @@ import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
 import { CreatePageResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { AppError } from '../shared/errors/AppError';
 
 export class APIConsumer implements IAPIConsumer {
   private gamesInDatabase: PageObjectResponse[] = [];
@@ -29,7 +30,7 @@ export class APIConsumer implements IAPIConsumer {
     const gameInfo = await this.getGameInfo(gameName);
 
     if(!gameInfo) {
-      return undefined;
+      throw new AppError('Game not found', 400);
     }
 
     const platformNames = gameInfo.platform?.map(platform => platform.name);
