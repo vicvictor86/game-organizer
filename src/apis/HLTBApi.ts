@@ -1,4 +1,5 @@
 import { HowLongToBeatService } from "howlongtobeat";
+import { AppError } from "../shared/errors/AppError";
 
 interface HLTBResponse {
   main: number;
@@ -8,12 +9,11 @@ interface HLTBResponse {
 
 const hltbService = new HowLongToBeatService();
 
-export async function getGameTimeToBeat(gameName: string): Promise<HLTBResponse | undefined> {
+export async function getGameTimeToBeat(gameName: string): Promise<HLTBResponse> {
   const hltbResponse = await hltbService.search(gameName);
 
   if(!hltbResponse) {
-    console.log('No game found');
-    return undefined;
+    throw new AppError('No game found');
   }
 
   const firstGameHltb = hltbResponse.at(0);

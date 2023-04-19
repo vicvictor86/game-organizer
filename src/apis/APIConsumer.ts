@@ -1,22 +1,36 @@
-import { getAllGames, getPlatformsOptions, getStatusOptions, insertGame, readItem, searchForNewGames, updateGameInfo } from '../apis/NotionApi';
+import { NotionApi } from '../apis/NotionApi';
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
-import { CreatePageResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { CreatePageResponse, DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { AppError } from '../shared/errors/AppError';
 
 export class APIConsumer implements IAPIConsumer {
   private gamesInDatabase: PageObjectResponse[] = [];
+  private notion: NotionApi;
 
-  constructor() { };
+  constructor(accessToken: string, gameDatabaseId?: string, platformDatabaseId?: string) {
+    this.notion = new NotionApi(accessToken, gameDatabaseId, platformDatabaseId);
+  };
+
+  public async searchDatabasesIds(databaseGameName: string, databasePlatformName: string) {
+    await this.notion.searchDatabasesIds(databaseGameName, databasePlatformName);
+  }
 
   public async getGamesInDatabase(): Promise<PageObjectResponse[]> {
     if (this.gamesInDatabase.length === 0) {
-      this.gamesInDatabase = await getAllGames();
+      this.gamesInDatabase = await this.notion.getAllGames();
     }
 
     return this.gamesInDatabase;
+  }
+
+  public async getDatabase(name: string): Promise<DatabaseObjectResponse> {
+    const database = await this.notion.getDatabaseByName(name);
+
+    return database;
   }
 
   private async getGameInfo(gameName: string): Promise<GameInfo | undefined> {
@@ -28,15 +42,15 @@ export class APIConsumer implements IAPIConsumer {
   private async insertNewGameProcess(gameName: string) {
     const gameInfo = await this.getGameInfo(gameName);
 
-    if(!gameInfo) {
-      return undefined;
+    if (!gameInfo) {
+      throw new AppError('Game not found', 400);
     }
 
     const platformNames = gameInfo.platform?.map(platform => platform.name);
     const releaseDate = gameInfo.releaseDate.toISOString();
     const timeToBeat = gameInfo.timeToBeat;
 
-    return await insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
+    return await this.notion.insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
   }
 
   public async insertNewGame(title: string): Promise<CreatePageResponse | undefined> {
@@ -46,13 +60,13 @@ export class APIConsumer implements IAPIConsumer {
   }
 
   public async searchGame(title: string) {
-    return await readItem(title);
+    return await this.notion.readItem(title);
   }
 
   public async updateNewGamesInfo(): Promise<void> {
-    const newGamesPromise = searchForNewGames();
-    const platformOptionsResponsePromise = getPlatformsOptions();
-    const statusOptionsPromise = getStatusOptions();
+    const newGamesPromise = this.notion.searchForNewGames();
+    const platformOptionsResponsePromise = this.notion.getPlatformsOptions();
+    const statusOptionsPromise = this.notion.getStatusOptions();
 
     const [newGames, platformOptionsResponse, statusOptions] = await Promise.all([newGamesPromise, platformOptionsResponsePromise, statusOptionsPromise]);
 
@@ -64,7 +78,7 @@ export class APIConsumer implements IAPIConsumer {
       const gameInfo = await this.getGameInfo(gameTitle);
 
       if (!gameInfo) {
-        updateGameInfo({
+        this.notion.updateGameInfo({
           page_id: game.id,
           title: `The game ${gameTitle} was not found`,
           platform: [],
@@ -83,7 +97,7 @@ export class APIConsumer implements IAPIConsumer {
       });
 
       if (gameAlreadyExists) {
-        updateGameInfo({
+        this.notion.updateGameInfo({
           page_id: game.id,
           title: `The game ${gameInfo.name} already been added`,
           platform: [],
@@ -109,7 +123,7 @@ export class APIConsumer implements IAPIConsumer {
         obtained_data: true,
       } as IUpdateGameInfo;
 
-      updateGameInfo(updateInfo, statusOptions);
+      this.notion.updateGameInfo(updateInfo, statusOptions);
     });
 
     await Promise.all(updateGamesInfoPromises);

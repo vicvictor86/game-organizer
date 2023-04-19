@@ -7,7 +7,8 @@
     "hltb",
     "howlongtobeat",
     "IGDBAPI",
-    "Millis"
+    "Millis",
+    "typeorm"
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }
