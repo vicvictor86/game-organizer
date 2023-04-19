@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "yarn migration:run node dist/shared/infra/http/server.js",
+    "start": "yarn migration:run && node dist/shared/infra/http/server.js",
     "build": "tsc",
     "dev": "ts-node-dev --transpile-only --inspect --ignore-watch node_modules src/shared/infra/http/server.ts",
     "typeorm": "ts-node-dev ./node_modules/typeorm/cli.js",
