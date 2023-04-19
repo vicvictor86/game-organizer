@@ -1,7 +1,8 @@
 import { container } from "tsyringe";
 import { Request, Response } from "express";
 import axios from "axios";
-import { CreateNotionUserConnection } from "../../services/CreateNotionUserConnection";
+import { CreateNotionUserConnection } from "../../../services/CreateNotionUserConnection";
+
 
 interface NotionResponse {
   access_token: string;

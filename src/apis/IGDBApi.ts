@@ -1,7 +1,7 @@
 import apicalypse, { ApicalypseConfig } from "apicalypse";
 
 import { getGameTimeToBeat } from "./HLTBApi";
-import getToken from '../auth/getToken';
+import getToken from './auth/getToken';
 
 import { IGDBAPIResponse } from "../interfaces/IGDBAPIResponse";
 import GameInfo from "../interfaces/GameInfo";

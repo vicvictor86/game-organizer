@@ -1,6 +1,6 @@
-import { ICreateNotionUserConnectionDTO } from "../../../../../dtos/ICreateNotionUserConnectionDTO";
+import { ICreateNotionUserConnectionDTO } from "../../../dtos/ICreateNotionUserConnectionDTO";
 import { connectionSource } from "../../../../../shared/infra/typeorm";
-import { INotionUserConnectionRepository } from "../../repositories/INotionUserConnectionRepository";
+import { INotionUserConnectionRepository } from "../../../repositories/INotionUserConnectionRepository";
 import { NotionUserConnection } from "../entities/NotionUserConnection";
 
 const userConnectionRepository = connectionSource.getRepository(NotionUserConnection);

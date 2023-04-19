@@ -2,7 +2,7 @@ import { AppError } from "../../../shared/errors/AppError";
 import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 import { APIConsumer } from "../../../apis/APIConsumer";
 import { inject, injectable } from "tsyringe";
-import { INotionUserConnectionRepository } from "../../users/infra/repositories/INotionUserConnectionRepository";
+import { INotionUserConnectionRepository } from "../../integration/repositories/INotionUserConnectionRepository";
 
 @injectable()
 export default class CreateGameService {

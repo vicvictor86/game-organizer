@@ -1,10 +1,10 @@
 import { inject, injectable } from "tsyringe";
 import { NotionApi } from "../../../apis/NotionApi";
 
-import { ICreateNotionUserConnectionDTO } from "../../../dtos/ICreateNotionUserConnectionDTO";
-import { INotionUserConnectionRepository } from "../../users/infra/repositories/INotionUserConnectionRepository";
+import { ICreateNotionUserConnectionDTO } from "../dtos/ICreateNotionUserConnectionDTO";
+import { INotionUserConnectionRepository } from "../repositories/INotionUserConnectionRepository";
 
-import { NotionUserConnection } from "../../users/infra/typeorm/entities/NotionUserConnection";
+import { NotionUserConnection } from "../infra/typeorm/entities/NotionUserConnection";
 
 interface Request {
   accessToken: string;

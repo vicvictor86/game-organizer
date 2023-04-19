@@ -1,5 +1,5 @@
-import { ICreateNotionUserConnectionDTO } from "../../../../dtos/ICreateNotionUserConnectionDTO";
-import { NotionUserConnection } from "../typeorm/entities/NotionUserConnection";
+import { ICreateNotionUserConnectionDTO } from "../dtos/ICreateNotionUserConnectionDTO";
+import { NotionUserConnection } from "../infra/typeorm/entities/NotionUserConnection";
 
 export interface INotionUserConnectionRepository {
   findById(id: string): Promise<NotionUserConnection | null>;
