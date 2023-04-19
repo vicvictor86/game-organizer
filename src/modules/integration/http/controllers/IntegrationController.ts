@@ -31,7 +31,7 @@ export default class IntegrationController {
       code: code,
     },
       {
-        auth: { username: process.env.CLIENT_ID_OAUTH || "", password: process.env.CLIENT_SECRET_OAUTH || "" },
+        auth: { username: process.env.NOTION_CLIENT_ID_OAUTH || "", password: process.env.NOTION_CLIENT_SECRET_OAUTH || "" },
         headers: { "Content-Type": "application/json" },
       });
 

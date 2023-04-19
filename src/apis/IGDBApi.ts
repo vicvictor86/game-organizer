@@ -11,11 +11,11 @@ async function getRequestOptions(): Promise<ApicalypseConfig> {
   const { access_token, expiresIn, tokenType } = await getToken();
 
   const requestOptions: ApicalypseConfig = {
-    baseURL: process.env.API_BASE_URL,
+    baseURL: process.env.IGDB_API_BASE_URL,
     method: 'POST',
     headers: {
       'Accept': 'application/json',
-      'Client-ID': process.env.CLIENT_ID,
+      'Client-ID': process.env.IGDB_CLIENT_ID,
       'Authorization': `Bearer ${access_token}`
     },
   };
@@ -27,7 +27,7 @@ async function getIdsGameInfo(gameName: string, requestOptions: ApicalypseConfig
   const response = apicalypse(requestOptions);
   const apiResponse = await response.fields([
     'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
-  ]).search(gameName).limit(1).request(`${process.env.API_BASE_URL}/games`);
+  ]).search(gameName).limit(1).request(`${process.env.IGDB_API_BASE_URL}/games`);
 
   return apiResponse.data[0];
 }
@@ -36,10 +36,10 @@ async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseCon
   const response = apicalypse(requestOptions);
 
   const gameGenreFormatted = data.genres?.toString();
-  const genresPromise = response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.API_BASE_URL}/genres`);
+  const genresPromise = response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.IGDB_API_BASE_URL}/genres`);
 
   const gamePlatformFormatted = data.platforms?.toString();
-  const platformsPromise = response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.API_BASE_URL}/platforms`);
+  const platformsPromise = response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.IGDB_API_BASE_URL}/platforms`);
 
   const unixTimeStampToMillis = new Date(data.first_release_date * 1000);
   const timesToBeatPromise = getGameTimeToBeat(data.name);
