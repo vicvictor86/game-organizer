@@ -8,6 +8,7 @@
     "howlongtobeat",
     "IGDBAPI",
     "Millis",
+    "PGHOST",
     "typeorm"
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib"

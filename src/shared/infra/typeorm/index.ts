@@ -2,11 +2,12 @@ import { DataSource } from 'typeorm';
 
 const connectionSource = new DataSource({
   type: "postgres",
-  host: "localhost",
-  port: 5432,
-  username: "postgres",
-  password: "docker",
-  database: "game_organizer",
+  host: process.env.PGHOST,
+  url: process.env.NODE_ENV === "production" ? process.env.DATABASE_URL : undefined,
+  port: Number(process.env.PGPORT),
+  username: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
   entities: [
     "./src/modules/**/infra/typeorm/entities/*.ts"
   ],
