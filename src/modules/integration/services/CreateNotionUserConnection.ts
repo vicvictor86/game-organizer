@@ -7,13 +7,14 @@ import { INotionUserConnectionRepository } from "../repositories/INotionUserConn
 import { NotionUserConnection } from "../infra/typeorm/entities/NotionUserConnection";
 
 interface Request {
-  accessToken: string;
+  userId: string;
   botId: string;
-  duplicateTemplateId?: string;
   ownerId: string;
-  workspaceIcon?: string;
+  accessToken: string;
   workspaceId: string;
+  workspaceIcon?: string;
   workspaceName?: string;
+  duplicateTemplateId?: string;
 }
 
 @injectable()

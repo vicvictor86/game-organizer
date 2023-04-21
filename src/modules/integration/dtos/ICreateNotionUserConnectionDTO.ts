@@ -1,5 +1,6 @@
 export interface ICreateNotionUserConnectionDTO {
   accessToken: string;
+  userId: string;
   botId: string;
   duplicateTemplateId?: string;
   ownerId: string;

@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import axios from "axios";
 import { CreateNotionUserConnection } from "../../../services/CreateNotionUserConnection";
 
-
 interface NotionResponse {
   access_token: string;
   owner: {
@@ -24,6 +23,7 @@ interface NotionResponse {
 export default class IntegrationController {
   public async create(request: Request, response: Response): Promise<Response> {
     const { code } = request.query;
+    const { id } = request.user;
 
     const createNotionUserConnection = container.resolve(CreateNotionUserConnection);
 
@@ -46,6 +46,7 @@ export default class IntegrationController {
       duplicateTemplateId: duplicate_template_id,
       workspaceIcon: workspace_icon,
       workspaceName: workspace_name,
+      userId: id,
     });
 
     return response.status(200).json(notionUserConnection);

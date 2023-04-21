@@ -14,6 +14,14 @@ export const NotionUserConnectionRepository: INotionUserConnectionRepository = u
     return userConnection;
   },
 
+  async findByUserId(userId: string): Promise<NotionUserConnection | null> {
+    const userConnection = await userConnectionRepository.findOne({
+      where: { userId },
+    });
+
+    return userConnection;
+  },
+
   async findByWorkspaceId(workspaceId: string): Promise<NotionUserConnection | null> {
     const userConnection = await userConnectionRepository.findOne({
       where: { workspaceId },

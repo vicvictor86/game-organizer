@@ -1,6 +1,6 @@
 import { Client } from "@notionhq/client";
 import { AppError } from "../shared/errors/AppError";
-import { TimesToBeat } from "../interfaces/GameInfo";
+import GameInfo, { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
 import { CreatePageResponse, DatabaseObjectResponse, PageObjectResponse, SearchResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
@@ -168,7 +168,7 @@ export class NotionApi {
     return statusOptions;
   }
 
-  async insertGame(gameName: string, gameInfo: Request): Promise<CreatePageResponse | undefined> {
+  async insertGame(gameName: string, gameInfo: Request): Promise<GameInfo | undefined> {
     if (!this.gameDatabaseId || !this.platformDatabaseId) {
       throw new AppError('Error: No database ID');
     };
@@ -187,7 +187,13 @@ export class NotionApi {
       throw new AppError('Error: No platform options');
     };
 
-    const platformId = platformOptions.find(platformOption => gameInfo.platformNames.some(platformName => platformName === platformOption.name))?.id;
+    const platformsToAdd = platformOptions.filter(platformOption => gameInfo.platformNames.some(platformName => platformName === platformOption.name));
+
+    const platformsId = platformsToAdd.map(platform => {
+      return {
+        id: platform.id,
+      }
+    });
 
     const statusId = statusOptions.find(status => status.name === 'Want to Play')?.id || statusOptions[0].id
 
@@ -207,11 +213,7 @@ export class NotionApi {
           ],
         },
         platform: {
-          relation: [
-            {
-              id: platformId || undefinedPlatform.id,
-            },
-          ],
+          relation: platformsId || [{ id: undefinedPlatform.id }]
         },
         status: {
           select: {
@@ -232,9 +234,16 @@ export class NotionApi {
       },
     });
 
-    console.log(`The game ${gameName} inserted with success!`)
+    console.log(`The game ${gameName} was inserted with success!`)
 
-    return response;
+    const gameAdded = {
+      name: gameName,
+      platforms: platformsToAdd,
+      timeToBeat: gameInfo.timeToBeat,
+      releaseDate: new Date(gameInfo.releaseDate),
+    } as GameInfo;
+
+    return gameAdded;
   }
 
   async updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[], statusName?: string): Promise<void> {
@@ -274,7 +283,7 @@ export class NotionApi {
           relation: platformsToAdd,
         },
         time_to_beat: {
-          number: game.timeToBeat.MainExtra,
+          number: game.timeToBeat.mainExtra,
         },
         release_date: {
           date: {

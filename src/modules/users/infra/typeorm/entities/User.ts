@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { NotionUserConnection } from '../../../../integration/infra/typeorm/entities/NotionUserConnection';
 
 @Entity('users')
 export class User {
@@ -12,6 +13,9 @@ export class User {
   @Column()
   @Exclude()
   password: string;
+
+  @OneToMany(() => NotionUserConnection, (notionUserConnection) => notionUserConnection.user)
+  notionUserConnections: NotionUserConnection[];
 
   @CreateDateColumn({name: 'created_at'})
   createdAt: Date;
