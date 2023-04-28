@@ -14,7 +14,7 @@ export class User {
   @Exclude()
   password: string;
 
-  @OneToMany(() => NotionUserConnection, (notionUserConnection) => notionUserConnection.user)
+  @OneToMany(() => NotionUserConnection, (notionUserConnection) => notionUserConnection.user, {eager: true})
   notionUserConnections: NotionUserConnection[];
 
   @CreateDateColumn({name: 'created_at'})

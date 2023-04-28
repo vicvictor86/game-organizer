@@ -1,3 +1,4 @@
+import { Exclude } from "class-transformer";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "../../../../users/infra/typeorm/entities/User";
 
@@ -6,6 +7,7 @@ export class NotionUserConnection {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Exclude()
   @Column({ name: 'access_token' })
   accessToken: string;
 
