@@ -4,7 +4,7 @@ import { getGameInfo } from "../apis/IGDBApi";
 import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
-import { CreatePageResponse, DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { AppError } from '../shared/errors/AppError';
 
 export class APIConsumer implements IAPIConsumer {
@@ -46,14 +46,14 @@ export class APIConsumer implements IAPIConsumer {
       throw new AppError('Game not found', 400);
     }
 
-    const platformNames = gameInfo.platform?.map(platform => platform.name);
+    const platformNames = gameInfo.platforms?.map(platform => platform.name);
     const releaseDate = gameInfo.releaseDate.toISOString();
     const timeToBeat = gameInfo.timeToBeat;
 
     return await this.notion.insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
   }
 
-  public async insertNewGame(title: string): Promise<CreatePageResponse | undefined> {
+  public async insertNewGame(title: string): Promise<GameInfo | undefined> {
     const gamesInfo = await this.insertNewGameProcess(title)
 
     return gamesInfo;
@@ -83,7 +83,7 @@ export class APIConsumer implements IAPIConsumer {
           title: `The game ${gameTitle} was not found`,
           platform: [],
           releaseDate: new Date(),
-          timeToBeat: { Completionist: 0, main: 0, MainExtra: 0 },
+          timeToBeat: { completionist: 0, main: 0, mainExtra: 0 },
           obtained_data: true,
         }, statusOptions, 'Not Found');
 
@@ -102,7 +102,7 @@ export class APIConsumer implements IAPIConsumer {
           title: `The game ${gameInfo.name} already been added`,
           platform: [],
           releaseDate: new Date(),
-          timeToBeat: { Completionist: 0, main: 0, MainExtra: 0 },
+          timeToBeat: { completionist: 0, main: 0, mainExtra: 0 },
           obtained_data: true,
         }, statusOptions, 'Already Added');
 
@@ -110,7 +110,7 @@ export class APIConsumer implements IAPIConsumer {
       }
 
       const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => {
-        return gameInfo.platform?.find(platformGame => platformGame.name === platform.name
+        return gameInfo.platforms?.find(platformGame => platformGame.name === platform.name
           || (platformGame.name.includes('PC') && platform.name === 'Steam'))
       });
 

@@ -1,6 +1,6 @@
-import { ICreateNotionUserConnectionDTO } from "../../../../../dtos/ICreateNotionUserConnectionDTO";
+import { ICreateNotionUserConnectionDTO } from "../../../dtos/ICreateNotionUserConnectionDTO";
 import { connectionSource } from "../../../../../shared/infra/typeorm";
-import { INotionUserConnectionRepository } from "../../repositories/INotionUserConnectionRepository";
+import { INotionUserConnectionRepository } from "../../../repositories/INotionUserConnectionRepository";
 import { NotionUserConnection } from "../entities/NotionUserConnection";
 
 const userConnectionRepository = connectionSource.getRepository(NotionUserConnection);
@@ -9,6 +9,14 @@ export const NotionUserConnectionRepository: INotionUserConnectionRepository = u
   async findByOwnerId(ownerId: string): Promise<NotionUserConnection | null> {
     const userConnection = await userConnectionRepository.findOne({
       where: { ownerId },
+    });
+
+    return userConnection;
+  },
+
+  async findByUserId(userId: string): Promise<NotionUserConnection | null> {
+    const userConnection = await userConnectionRepository.findOne({
+      where: { userId },
     });
 
     return userConnection;

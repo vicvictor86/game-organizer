@@ -1,10 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Exclude } from "class-transformer";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { User } from "../../../../users/infra/typeorm/entities/User";
 
 @Entity('notion_user_connection')
 export class NotionUserConnection {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Exclude()
   @Column({ name: 'access_token' })
   accessToken: string;
 
@@ -16,6 +19,13 @@ export class NotionUserConnection {
 
   @Column({ name: 'owner_id' })
   ownerId: string;
+
+  @Column({ name: 'user_id' })
+  userId: string;
+
+  @ManyToOne(() => User, (user) => user.notionUserConnections)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ name: 'workspace_icon' })
   workspaceIcon: string;

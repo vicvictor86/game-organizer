@@ -1,8 +1,8 @@
 import { AppError } from "../../../shared/errors/AppError";
-import { CreatePageResponse } from "@notionhq/client/build/src/api-endpoints";
 import { APIConsumer } from "../../../apis/APIConsumer";
 import { inject, injectable } from "tsyringe";
-import { INotionUserConnectionRepository } from "../../users/infra/repositories/INotionUserConnectionRepository";
+import { INotionUserConnectionRepository } from "../../integration/repositories/INotionUserConnectionRepository";
+import GameInfo from "../../../interfaces/GameInfo";
 
 @injectable()
 export default class CreateGameService {
@@ -11,16 +11,18 @@ export default class CreateGameService {
     private notionUserConnectionRepository: INotionUserConnectionRepository,
   ) { }
 
-  public async execute(title: string, token: string): Promise<CreatePageResponse | undefined> {
-    const userConnection = await this.notionUserConnectionRepository.findByAccessToken(token);
+  public async execute(title: string, userId: string): Promise<GameInfo | undefined> {
+    const userConnection = await this.notionUserConnectionRepository.findByUserId(userId);
 
     if(!userConnection) {
       throw new AppError('User not found', 400);
     }
 
+    const { accessToken } = userConnection;
+
     const { gameDatabaseId, platformDatabaseId } = userConnection;
 
-    const apiConsumer = new APIConsumer(token, gameDatabaseId, platformDatabaseId);
+    const apiConsumer = new APIConsumer(accessToken, gameDatabaseId, platformDatabaseId);
 
     const gameInfo = await apiConsumer.insertNewGame(title);
 

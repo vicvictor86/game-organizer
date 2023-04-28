@@ -1,7 +1,7 @@
 import apicalypse, { ApicalypseConfig } from "apicalypse";
 
 import { getGameTimeToBeat } from "./HLTBApi";
-import getToken from '../auth/getToken';
+import getToken from './auth/getToken';
 
 import { IGDBAPIResponse } from "../interfaces/IGDBAPIResponse";
 import GameInfo from "../interfaces/GameInfo";
@@ -48,14 +48,14 @@ async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseCon
 
   const actualGameInfo = {
     name: data.name,
-    platform: platforms.data,
+    platforms: platforms.data,
     genres: genres.data,
     rating: data.total_rating,
     releaseDate: unixTimeStampToMillis,
     timeToBeat: {
       main: timesToBeat?.main || 0,
-      MainExtra: timesToBeat?.MainExtra || 0,
-      Completionist: timesToBeat?.Completionist || 0,
+      mainExtra: timesToBeat?.mainExtra || 0,
+      completionist: timesToBeat?.completionist || 0,
     },
   } as GameInfo;
 
