@@ -30,7 +30,6 @@ export default class IntegrationController {
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: process.env.NOTION_REDIRECT_URI || "",
     },
       {
         auth: { username: process.env.NOTION_CLIENT_ID_OAUTH || "", password: process.env.NOTION_CLIENT_SECRET_OAUTH || "" },
