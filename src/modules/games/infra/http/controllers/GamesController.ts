@@ -10,7 +10,6 @@ export default class GameController {
 
     const createGameService = container.resolve(CreateGameService);
 
-    console.log("entrou")
     const gameInformation = await createGameService.execute(title, id);
 
     return response.status(200).json(gameInformation);
