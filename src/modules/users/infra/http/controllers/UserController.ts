@@ -25,6 +25,6 @@ export default class UsersController {
 
     const userWithoutPassword = instanceToInstance(user);
 
-    return response.status(200).json(userWithoutPassword);
+    return response.status(200).json({ user: userWithoutPassword });
   }
 }
