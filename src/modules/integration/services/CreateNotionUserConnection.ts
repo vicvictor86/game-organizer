@@ -14,7 +14,7 @@ interface Request {
   workspaceId: string;
   workspaceIcon?: string;
   workspaceName?: string;
-  duplicateTemplateId?: string;
+  duplicatedTemplateId?: string;
 }
 
 @injectable()

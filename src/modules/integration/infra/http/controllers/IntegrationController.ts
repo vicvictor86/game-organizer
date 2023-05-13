@@ -17,7 +17,7 @@ interface NotionResponse {
   token_type?: string;
   workspace_name?: string;
   workspace_icon?: string;
-  duplicate_template_id?: string;
+  duplicated_template_id?: string;
 }
 
 export default class IntegrationController {
@@ -36,14 +36,14 @@ export default class IntegrationController {
         headers: { "Content-Type": "application/json" },
       });
 
-    const { access_token, owner, workspace_id, bot_id, duplicate_template_id, token_type, workspace_icon, workspace_name } = notionResponse.data;
+    const { access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name } = notionResponse.data;
 
     const notionUserConnection = await createNotionUserConnection.execute({
       accessToken: access_token,
       ownerId: owner.user.id,
       workspaceId: workspace_id,
       botId: bot_id,
-      duplicateTemplateId: duplicate_template_id,
+      duplicatedTemplateId: duplicated_template_id,
       workspaceIcon: workspace_icon,
       workspaceName: workspace_name,
       userId: id,
