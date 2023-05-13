@@ -2,7 +2,7 @@ import { Client } from "@notionhq/client";
 import { AppError } from "../shared/errors/AppError";
 import GameInfo, { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { CreatePageResponse, DatabaseObjectResponse, PageObjectResponse, SearchResponse } from "@notionhq/client/build/src/api-endpoints";
+import { DatabaseObjectResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { PlatformOptions } from "../interfaces/PlatformOptions";
 
@@ -21,7 +21,15 @@ interface Request {
 interface gamesProperties {
   id: string;
   properties: {
-    title: string,
+    game_title: {
+      title: [
+        {
+          text: {
+            content: string;
+          }
+        }
+      ]
+    },
     platform: string,
     status: {
       select: {
@@ -81,7 +89,7 @@ export class NotionApi {
         return resultWithProperties;
       });
 
-      const game = gamesWithProperties.find(game => game.properties.title === title);
+      const game = gamesWithProperties.find(game => game.properties.game_title.title[0].text.content === title);
 
       return game;
     }
@@ -173,9 +181,21 @@ export class NotionApi {
       throw new AppError('Error: No database ID');
     };
 
-    const gameDatabaseInfo = await this.notion.databases.retrieve({
+    const gameDatabaseInfoPromise = this.notion.databases.retrieve({
       database_id: this.gameDatabaseId,
     });
+    const allGamesInDatabasePromise = this.getAllGames();
+
+    const [gameDatabaseInfo, allGamesInDatabase] = await Promise.all([gameDatabaseInfoPromise, allGamesInDatabasePromise]);
+
+    const allGamesInDatabaseAny = allGamesInDatabase as any;
+    const allGamesInDatabaseWithProperties = allGamesInDatabaseAny as gamesProperties[];
+    
+    const gameAlreadyExists = allGamesInDatabaseWithProperties.find(game => game.properties.game_title.title[0].text.content === gameName);
+
+    if(gameAlreadyExists) {
+      throw new AppError('Game already exists');
+    }
 
     const gamesAny = gameDatabaseInfo as any;
     const gamesWithProperties = gamesAny as gamesProperties;
