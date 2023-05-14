@@ -27,8 +27,6 @@ export default class IntegrationController {
 
     const createNotionUserConnection = container.resolve(CreateNotionUserConnection);
 
-    console.log(code);
-
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
@@ -39,8 +37,6 @@ export default class IntegrationController {
       });
 
     const { access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name } = notionResponse.data;
-
-    console.log(notionResponse);
 
     const notionUserConnection = await createNotionUserConnection.execute({
       accessToken: access_token,
