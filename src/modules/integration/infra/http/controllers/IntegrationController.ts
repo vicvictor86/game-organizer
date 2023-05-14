@@ -27,6 +27,8 @@ export default class IntegrationController {
 
     const createNotionUserConnection = container.resolve(CreateNotionUserConnection);
 
+    console.log(code);
+
     const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
       grant_type: 'authorization_code',
       code: code,
