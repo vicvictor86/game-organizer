@@ -15,7 +15,7 @@ export class NotionUserConnection {
   botId: string;
 
   @Column({ name: 'duplicate_template_id' })
-  duplicateTemplateId: string;
+  duplicatedTemplateId: string;
 
   @Column({ name: 'owner_id' })
   ownerId: string;
