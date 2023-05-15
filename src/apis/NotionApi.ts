@@ -1,8 +1,10 @@
 import { Client } from "@notionhq/client";
+import { DatabaseObjectResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+
 import { AppError } from "../shared/errors/AppError";
+
 import GameInfo, { TimesToBeat } from "../interfaces/GameInfo";
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { DatabaseObjectResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { PlatformOptions } from "../interfaces/PlatformOptions";
 
@@ -60,11 +62,13 @@ export class NotionApi {
   private notion: Client;
   private gameDatabaseId: string | undefined;
   private platformDatabaseId: string | undefined;
+  private defaultStatusName: string;
 
-  constructor(accessToken: string, gameDatabaseId?: string, platformDatabaseId?: string) {
+  constructor(accessToken: string, defaultStatusName: string, gameDatabaseId?: string, platformDatabaseId?: string) {
     this.notion = new Client({ auth: accessToken });
     this.gameDatabaseId = gameDatabaseId;
     this.platformDatabaseId = platformDatabaseId;
+    this.defaultStatusName = defaultStatusName;
   }
 
   async searchDatabasesIds(gameDatabaseName: string, platformDatabaseName: string) {
@@ -190,10 +194,10 @@ export class NotionApi {
 
     const allGamesInDatabaseAny = allGamesInDatabase as any;
     const allGamesInDatabaseWithProperties = allGamesInDatabaseAny as gamesProperties[];
-    
+
     const gameAlreadyExists = allGamesInDatabaseWithProperties.find(game => game.properties.game_title.title[0].text.content === gameName);
 
-    if(gameAlreadyExists) {
+    if (gameAlreadyExists) {
       throw new AppError('Game already exists');
     }
 
@@ -215,7 +219,9 @@ export class NotionApi {
       }
     });
 
-    const statusId = statusOptions.find(status => status.name === 'Want to Play')?.id || statusOptions[0].id
+    const selectId = statusOptions.find(status => status.name === this.defaultStatusName)?.id;
+
+    const select = selectId ? { id: selectId } : { name: this.defaultStatusName };
 
     const response = await this.notion.pages.create({
       parent: {
@@ -236,9 +242,7 @@ export class NotionApi {
           relation: platformsId || [{ id: undefinedPlatform.id }]
         },
         status: {
-          select: {
-            id: statusId,
-          },
+          select,
         },
         time_to_beat: {
           number: gameInfo.timeToBeat.main,

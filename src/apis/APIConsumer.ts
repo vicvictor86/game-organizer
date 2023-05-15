@@ -1,18 +1,20 @@
+import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { AppError } from '../shared/errors/AppError';
+
 import { NotionApi } from '../apis/NotionApi';
-import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import { getGameInfo } from "../apis/IGDBApi";
+
+import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
 import GameInfo from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
-import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
-import { AppError } from '../shared/errors/AppError';
 
 export class APIConsumer implements IAPIConsumer {
   private gamesInDatabase: PageObjectResponse[] = [];
   private notion: NotionApi;
 
-  constructor(accessToken: string, gameDatabaseId?: string, platformDatabaseId?: string) {
-    this.notion = new NotionApi(accessToken, gameDatabaseId, platformDatabaseId);
+  constructor(accessToken: string, defaultStatusName: string, gameDatabaseId?: string, platformDatabaseId?: string) {
+    this.notion = new NotionApi(accessToken, defaultStatusName, gameDatabaseId, platformDatabaseId);
   };
 
   public async searchDatabasesIds(databaseGameName: string, databasePlatformName: string) {

@@ -3,6 +3,7 @@ import { User } from "notion-api-types/requests";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "../../../shared/errors/AppError";
+import { IUserSettingsRepository } from "../repositories/IUserSettingsRepository";
 import { IUsersRepository } from "../repositories/IUsersRepository";
 
 interface Request {
@@ -17,6 +18,9 @@ export default class CreateUserService {
   constructor(
     @inject("UsersRepository")
     private usersRepository: IUsersRepository,
+
+    @inject("UserSettingsRepository")
+    private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
   public async execute({ username, password }: Request): Promise<User> {
@@ -31,6 +35,10 @@ export default class CreateUserService {
     const user = await this.usersRepository.create({
       username,
       password: hashedPassword,
+    });
+
+    await this.userSettingsRepository.create({
+      userId: user.id,
     });
 
     return user;
