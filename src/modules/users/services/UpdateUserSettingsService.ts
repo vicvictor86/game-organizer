@@ -1,10 +1,10 @@
-import { inject, injectable } from "tsyringe";
+import { inject, injectable } from 'tsyringe';
 
-import { AppError } from "../../../shared/errors/AppError";
+import { AppError } from '../../../shared/errors/AppError';
 
-import { UserSettings } from "../infra/typeorm/entities/UserSettings";
+import { UserSettings } from '../infra/typeorm/entities/UserSettings';
 
-import { IUserSettingsRepository } from "../repositories/IUserSettingsRepository";
+import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository';
 
 interface Request {
   userId: string;
@@ -15,7 +15,7 @@ interface Request {
 @injectable()
 export default class UpdateUserSettingsService {
   constructor(
-    @inject("UserSettingsRepository")
+    @inject('UserSettingsRepository')
     private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
@@ -23,7 +23,7 @@ export default class UpdateUserSettingsService {
     const userSettings = await this.userSettingsRepository.findByUserId(userId);
 
     if (!userSettings) {
-      throw new AppError("User settings not found", 404);
+      throw new AppError('User settings not found', 404);
     }
 
     const userSettingsUpdated = await this.userSettingsRepository.save({

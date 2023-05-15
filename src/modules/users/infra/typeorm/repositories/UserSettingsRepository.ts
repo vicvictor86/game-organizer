@@ -12,8 +12,8 @@ export const UserSettingsRepository: IUserSettingsRepository = userSettingsRepos
   async findById(id: string): Promise<UserSettings | null> {
     const userSettings = await userSettingsRepository.findOne({
       where: {
-        id
-      }
+        id,
+      },
     });
 
     return userSettings;
@@ -22,8 +22,8 @@ export const UserSettingsRepository: IUserSettingsRepository = userSettingsRepos
   async findByUserId(userId: string): Promise<UserSettings | null> {
     const userSettings = await userSettingsRepository.findOne({
       where: {
-        userId
-      }
+        userId,
+      },
     });
 
     return userSettings;
@@ -38,7 +38,7 @@ export const UserSettingsRepository: IUserSettingsRepository = userSettingsRepos
   },
 
   async save(userSettings: UserSettings): Promise<UserSettings> {
-    return await userSettingsRepository.save(userSettings);
+    return userSettingsRepository.save(userSettings);
   },
 
-})
+});

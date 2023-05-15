@@ -1,7 +1,7 @@
-import { ICreateNotionUserConnectionDTO } from "../../../dtos/ICreateNotionUserConnectionDTO";
-import { connectionSource } from "../../../../../shared/infra/typeorm";
-import { INotionUserConnectionRepository } from "../../../repositories/INotionUserConnectionRepository";
-import { NotionUserConnection } from "../entities/NotionUserConnection";
+import { ICreateNotionUserConnectionDTO } from '../../../dtos/ICreateNotionUserConnectionDTO';
+import { connectionSource } from '../../../../../shared/infra/typeorm';
+import { INotionUserConnectionRepository } from '../../../repositories/INotionUserConnectionRepository';
+import { NotionUserConnection } from '../entities/NotionUserConnection';
 
 const userConnectionRepository = connectionSource.getRepository(NotionUserConnection);
 
@@ -29,7 +29,7 @@ export const NotionUserConnectionRepository: INotionUserConnectionRepository = u
 
     return userConnection;
   },
-  
+
   async findByAccessToken(accessToken: string): Promise<NotionUserConnection | null> {
     const userConnection = await userConnectionRepository.findOne({
       where: { accessToken },
@@ -55,6 +55,6 @@ export const NotionUserConnectionRepository: INotionUserConnectionRepository = u
   },
 
   async save(notionUserConnection: NotionUserConnection): Promise<NotionUserConnection> {
-    return await userConnectionRepository.save(notionUserConnection);
+    return userConnectionRepository.save(notionUserConnection);
   },
-})
+});

@@ -1,9 +1,9 @@
-import { container } from "tsyringe";
-import { Request, Response } from "express";
-import { instanceToInstance } from "class-transformer";
+import { container } from 'tsyringe';
+import { Request, Response } from 'express';
+import { instanceToInstance } from 'class-transformer';
 
-import UpdateUserSettingsService from "../../../services/UpdateUserSettingsService";
-import IndexUserSettingsService from "../../../services/IndexUserSettingsService";
+import UpdateUserSettingsService from '../../../services/UpdateUserSettingsService';
+import IndexUserSettingsService from '../../../services/IndexUserSettingsService';
 
 export default class UserSettingsController {
   public async update(request: Request, response: Response) {

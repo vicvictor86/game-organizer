@@ -1,10 +1,12 @@
-import { hash } from "bcryptjs";
-import { User } from "notion-api-types/requests";
-import { inject, injectable } from "tsyringe";
+/* eslint-disable import/no-extraneous-dependencies */
 
-import { AppError } from "../../../shared/errors/AppError";
-import { IUserSettingsRepository } from "../repositories/IUserSettingsRepository";
-import { IUsersRepository } from "../repositories/IUsersRepository";
+import { hash } from 'bcryptjs';
+import { User } from 'notion-api-types/requests';
+import { inject, injectable } from 'tsyringe';
+
+import { AppError } from '../../../shared/errors/AppError';
+import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository';
+import { IUsersRepository } from '../repositories/IUsersRepository';
 
 interface Request {
   username: string;
@@ -14,12 +16,11 @@ interface Request {
 
 @injectable()
 export default class CreateUserService {
-
   constructor(
-    @inject("UsersRepository")
+    @inject('UsersRepository')
     private usersRepository: IUsersRepository,
 
-    @inject("UserSettingsRepository")
+    @inject('UserSettingsRepository')
     private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
@@ -27,7 +28,7 @@ export default class CreateUserService {
     const usernameExists = await this.usersRepository.findByUsername(username);
 
     if (usernameExists) {
-      throw new AppError('Username already exists')
+      throw new AppError('Username already exists');
     }
 
     const hashedPassword = await hash(password, 8);

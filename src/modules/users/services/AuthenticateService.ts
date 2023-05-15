@@ -1,13 +1,18 @@
-import { AppError } from "../../../shared/errors/AppError";
-import { compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
-import { inject, injectable } from "tsyringe";
-import ICreateLoginSessionsDTO from "../dtos/ICreateLoginSessionsDTO";
-import { User } from "../infra/typeorm/entities/User";
-import { IUsersRepository } from "../repositories/IUsersRepository";
+import { compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
+import { inject, injectable } from 'tsyringe';
+
+import { AppError } from '../../../shared/errors/AppError';
+
+import { ICreateLoginSessionsDTO } from '../dtos/ICreateLoginSessionsDTO';
+
+import { User } from '../infra/typeorm/entities/User';
+import { UserSettings } from '../infra/typeorm/entities/UserSettings';
+
+import { IUsersRepository } from '../repositories/IUsersRepository';
+import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository';
+
 import { authConfig } from '../../../config/auth';
-import { IUserSettingsRepository } from "../repositories/IUserSettingsRepository";
-import { UserSettings } from "../infra/typeorm/entities/UserSettings";
 
 interface Response {
   user: User;
@@ -23,7 +28,7 @@ export default class AuthenticateService {
     @inject('UsersRepository')
     private userRepository: IUsersRepository,
 
-    @inject("UserSettingsRepository")
+    @inject('UserSettingsRepository')
     private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
@@ -50,7 +55,7 @@ export default class AuthenticateService {
     const userSettings = await this.userSettingsRepository.findByUserId(user.id);
 
     if (!userSettings) {
-      throw new AppError("User settings not found", 404);
+      throw new AppError('User settings not found', 404);
     }
 
     return { user, token, userSettings };

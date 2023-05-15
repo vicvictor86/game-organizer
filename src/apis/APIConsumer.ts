@@ -1,21 +1,22 @@
 import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { AppError } from '../shared/errors/AppError';
 
-import { NotionApi } from '../apis/NotionApi';
-import { getGameInfo } from "../apis/IGDBApi";
+import { NotionApi } from './NotionApi';
+import { getGameInfo } from './IGDBApi';
 
-import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
-import GameInfo from '../interfaces/GameInfo';
+import { IUpdateGameInfo } from '../interfaces/IUpdateGameInfo';
+import { GameInfo } from '../interfaces/GameInfo';
 import { GamesDatabase } from '../interfaces/GamesDatabase';
 import { IAPIConsumer } from '../interfaces/IAPIConsumer';
 
 export class APIConsumer implements IAPIConsumer {
   private gamesInDatabase: PageObjectResponse[] = [];
+
   private notion: NotionApi;
 
   constructor(accessToken: string, defaultStatusName: string, gameDatabaseId?: string, platformDatabaseId?: string) {
     this.notion = new NotionApi(accessToken, defaultStatusName, gameDatabaseId, platformDatabaseId);
-  };
+  }
 
   public async searchDatabasesIds(databaseGameName: string, databasePlatformName: string) {
     await this.notion.searchDatabasesIds(databaseGameName, databasePlatformName);
@@ -48,21 +49,21 @@ export class APIConsumer implements IAPIConsumer {
       throw new AppError('Game not found', 400);
     }
 
-    const platformNames = gameInfo.platforms?.map(platform => platform.name);
+    const platformNames = gameInfo.platforms?.map((platform) => platform.name);
     const releaseDate = gameInfo.releaseDate.toISOString();
-    const timeToBeat = gameInfo.timeToBeat;
+    const { timeToBeat } = gameInfo;
 
-    return await this.notion.insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
+    return this.notion.insertGame(gameInfo.name, { platformNames, releaseDate, timeToBeat });
   }
 
   public async insertNewGame(title: string): Promise<GameInfo | undefined> {
-    const gamesInfo = await this.insertNewGameProcess(title)
+    const gamesInfo = await this.insertNewGameProcess(title);
 
     return gamesInfo;
   }
 
   public async searchGame(title: string) {
-    return await this.notion.readItem(title);
+    return this.notion.readItem(title);
   }
 
   public async updateNewGamesInfo(): Promise<void> {
@@ -72,8 +73,7 @@ export class APIConsumer implements IAPIConsumer {
 
     const [newGames, platformOptionsResponse, statusOptions] = await Promise.all([newGamesPromise, platformOptionsResponsePromise, statusOptionsPromise]);
 
-    const updateGamesInfoPromises = newGames.map(async game => {
-
+    const updateGamesInfoPromises = newGames.map(async (game) => {
       const gameProperties = game.properties as GamesDatabase;
       const gameTitle = gameProperties.game_title.title[0].text.content;
 
@@ -92,10 +92,10 @@ export class APIConsumer implements IAPIConsumer {
         return;
       }
 
-      const gameAlreadyExists = this.gamesInDatabase.find(game => {
-        const gameProperties = game.properties as GamesDatabase;
+      const gameAlreadyExists = this.gamesInDatabase.find((gameInDatabase) => {
+        const gameInDatabaseProperties = gameInDatabase.properties as GamesDatabase;
 
-        return gameProperties.game_title.title[0].text.content === gameInfo.name && gameProperties.obtained_data === true;
+        return gameInDatabaseProperties.game_title.title[0].text.content === gameInfo.name && gameInDatabaseProperties.obtained_data === true;
       });
 
       if (gameAlreadyExists) {
@@ -111,10 +111,8 @@ export class APIConsumer implements IAPIConsumer {
         return;
       }
 
-      const availablePlatforms = platformOptionsResponse.platformOptions.filter(platform => {
-        return gameInfo.platforms?.find(platformGame => platformGame.name === platform.name
-          || (platformGame.name.includes('PC') && platform.name === 'Steam'))
-      });
+      const availablePlatforms = platformOptionsResponse.platformOptions.filter((platform) => gameInfo.platforms?.find((platformGame) => platformGame.name === platform.name
+          || (platformGame.name.includes('PC') && platform.name === 'Steam')));
 
       const updateInfo = {
         page_id: game.id,

@@ -1,8 +1,9 @@
-import { User } from "notion-api-types/requests";
-import { inject, injectable } from "tsyringe";
+/* eslint-disable import/no-extraneous-dependencies */
+import { User } from 'notion-api-types/requests';
+import { inject, injectable } from 'tsyringe';
 
-import { AppError } from "../../../shared/errors/AppError";
-import { IUsersRepository } from "../repositories/IUsersRepository";
+import { AppError } from '../../../shared/errors/AppError';
+import { IUsersRepository } from '../repositories/IUsersRepository';
 
 interface Request {
   userId: string;
@@ -10,16 +11,15 @@ interface Request {
 
 @injectable()
 export class IndexUserService {
-
   constructor(
-    @inject("UsersRepository")
+    @inject('UsersRepository')
     private usersRepository: IUsersRepository,
   ) { }
 
   public async execute({ userId }: Request): Promise<User> {
     const user = await this.usersRepository.findById(userId);
 
-    if(!user) {
+    if (!user) {
       throw new AppError('User not found');
     }
 

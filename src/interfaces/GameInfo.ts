@@ -4,7 +4,7 @@ export interface TimesToBeat {
   completionist: number;
 }
 
-export default interface GameInfo {
+export interface GameInfo {
   name: string;
   platforms: { id: string, name: string }[];
   genres: { id: string, name: string }[];
