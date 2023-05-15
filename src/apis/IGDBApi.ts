@@ -1,22 +1,23 @@
-import apicalypse, { ApicalypseConfig } from "apicalypse";
+/* eslint-disable camelcase */
+import apicalypse, { ApicalypseConfig } from 'apicalypse';
 
-import { getGameTimeToBeat } from "./HLTBApi";
+import { getGameTimeToBeat } from './HLTBApi';
 import getToken from './auth/getToken';
 
-import { IGDBAPIResponse } from "../interfaces/IGDBAPIResponse";
-import GameInfo from "../interfaces/GameInfo";
-import { AppError } from "../shared/errors/AppError";
+import { IGDBAPIResponse } from '../interfaces/IGDBAPIResponse';
+import { GameInfo } from '../interfaces/GameInfo';
+import { AppError } from '../shared/errors/AppError';
 
 async function getRequestOptions(): Promise<ApicalypseConfig> {
-  const { access_token, expiresIn, tokenType } = await getToken();
+  const { access_token } = await getToken();
 
   const requestOptions: ApicalypseConfig = {
     baseURL: process.env.IGDB_API_BASE_URL,
     method: 'POST',
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'Client-ID': process.env.IGDB_CLIENT_ID,
-      'Authorization': `Bearer ${access_token}`
+      Authorization: `Bearer ${access_token}`,
     },
   };
 
@@ -66,7 +67,7 @@ export async function getGameInfo(gameName: string): Promise<GameInfo | undefine
   const requestOptions = await getRequestOptions();
   const gamesIdsInfo = await getIdsGameInfo(gameName, requestOptions);
 
-  if(!gamesIdsInfo) {
+  if (!gamesIdsInfo) {
     throw new AppError('Game not found');
   }
 

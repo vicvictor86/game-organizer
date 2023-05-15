@@ -1,4 +1,7 @@
-import { Relation, Select, Date, Number } from 'notion-api-types/responses/properties/database';
+/* eslint-disable import/no-extraneous-dependencies */
+import {
+  Relation, Select, Date,
+} from 'notion-api-types/responses/properties/database';
 
 export interface GamesDatabase extends Record<string, any> {
   game_title: {
@@ -15,7 +18,7 @@ export interface GamesDatabase extends Record<string, any> {
   status?: Select;
   rating?: Select;
   completion?: Date;
-  time_to_beat: Number;
+  time_to_beat: number;
   release_date?: Date;
   completion_date?: Date;
   obtained_data?: boolean;

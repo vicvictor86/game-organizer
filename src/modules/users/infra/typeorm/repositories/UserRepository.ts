@@ -10,8 +10,8 @@ export const UsersRepository: IUsersRepository = usersRepository.extend({
   async findById(id: string): Promise<User | null> {
     const user = await usersRepository.findOne({
       where: {
-        id
-      }
+        id,
+      },
     });
 
     return user;
@@ -20,8 +20,8 @@ export const UsersRepository: IUsersRepository = usersRepository.extend({
   async findByUsername(username: string): Promise<User | null> {
     const user = await usersRepository.findOne({
       where: {
-        username
-      }
+        username,
+      },
     });
 
     return user;
@@ -36,7 +36,7 @@ export const UsersRepository: IUsersRepository = usersRepository.extend({
   },
 
   async save(user: User): Promise<User> {
-    return await usersRepository.save(user);
+    return usersRepository.save(user);
   },
 
-})
+});

@@ -1,4 +1,4 @@
-import GameInfo from "./GameInfo";
+import { GameInfo } from './GameInfo';
 
 export interface IAPIConsumer {
   insertNewGame(title: string): Promise<GameInfo | undefined>;

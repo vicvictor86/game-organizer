@@ -1,16 +1,25 @@
-import { AppError } from "../../../shared/errors/AppError";
-import { compare, hash } from "bcryptjs";
-import { sign } from "jsonwebtoken";
-import { inject, injectable } from "tsyringe";
-import ICreateLoginSessionsDTO from "../dtos/ICreateLoginSessionsDTO";
-import { User } from "../infra/typeorm/entities/User";
-import { IUsersRepository } from "../repositories/IUsersRepository";
+import { compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
+import { inject, injectable } from 'tsyringe';
+
+import { AppError } from '../../../shared/errors/AppError';
+
+import { ICreateLoginSessionsDTO } from '../dtos/ICreateLoginSessionsDTO';
+
+import { User } from '../infra/typeorm/entities/User';
+import { UserSettings } from '../infra/typeorm/entities/UserSettings';
+
+import { IUsersRepository } from '../repositories/IUsersRepository';
+import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository';
+
 import { authConfig } from '../../../config/auth';
 
 interface Response {
   user: User;
 
   token: string;
+
+  userSettings: UserSettings;
 }
 
 @injectable()
@@ -18,6 +27,9 @@ export default class AuthenticateService {
   constructor(
     @inject('UsersRepository')
     private userRepository: IUsersRepository,
+
+    @inject('UserSettingsRepository')
+    private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
   public async execute({ username, password }: ICreateLoginSessionsDTO): Promise<Response> {
@@ -40,6 +52,12 @@ export default class AuthenticateService {
       expiresIn: authConfig.jwt.expiresIn,
     });
 
-    return { user, token };
+    const userSettings = await this.userSettingsRepository.findByUserId(user.id);
+
+    if (!userSettings) {
+      throw new AppError('User settings not found', 404);
+    }
+
+    return { user, token, userSettings };
   }
 }

@@ -1,27 +1,33 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateUser1681948189974 implements MigrationInterface {
+export class CreateUserSettings1684082902442 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'users',
+        name: 'user_settings',
         columns: [
           {
             name: 'id',
-            type: 'varchar',
+            type: 'uuid',
             isPrimary: true,
             generationStrategy: 'uuid',
             default: 'uuid_generate_v4()',
           },
           {
-            name: 'username',
-            type: 'varchar',
+            name: 'user_id',
+            type: 'uuid',
             isNullable: false,
           },
           {
-            name: 'password',
+            name: 'status_name',
             type: 'varchar',
             isNullable: false,
+            default: "'Desejo jogar'",
+          },
+          {
+            name: 'last_database_selected_id',
+            type: 'varchar',
+            isNullable: true,
           },
           {
             name: 'created_at',
@@ -34,11 +40,21 @@ export class CreateUser1681948189974 implements MigrationInterface {
             default: 'now()',
           },
         ],
+        foreignKeys: [
+          {
+            name: 'UserConfigUser',
+            referencedTableName: 'users',
+            referencedColumnNames: ['id'],
+            columnNames: ['user_id'],
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+          },
+        ],
       }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('users');
+    await queryRunner.dropTable('user_settings');
   }
 }

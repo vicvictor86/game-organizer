@@ -1,4 +1,4 @@
-import { SelectOptions } from "./SelectOptions";
+import { SelectOptions } from './SelectOptions';
 
 interface NotionDatabaseResponse {
   id: string;

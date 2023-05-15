@@ -1,9 +1,9 @@
-import { container } from "tsyringe";
-import { Request, Response } from "express";
-import { instanceToInstance } from "class-transformer";
+import { container } from 'tsyringe';
+import { Request, Response } from 'express';
+import { instanceToInstance } from 'class-transformer';
 
-import { IndexUserService } from "../../../services/IndexUserService";
-import CreateUserService from "../../../services/CreateUserService";
+import { IndexUserService } from '../../../services/IndexUserService';
+import CreateUserService from '../../../services/CreateUserService';
 
 export default class UsersController {
   public async create(request: Request, response: Response) {
@@ -17,11 +17,11 @@ export default class UsersController {
   }
 
   public async index(request: Request, response: Response) {
-    const { userId } = request.params;
+    const { id } = request.user;
 
     const indexUserService = container.resolve(IndexUserService);
 
-    const user = await indexUserService.execute({ userId });
+    const user = await indexUserService.execute({ userId: id });
 
     const userWithoutPassword = instanceToInstance(user);
 

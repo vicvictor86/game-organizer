@@ -1,7 +1,6 @@
-import { Request, Response } from "express";
-import { container } from "tsyringe";
-import CreateGameService from "../../../services/CreateGameService";
-
+import { Request, Response } from 'express';
+import { container } from 'tsyringe';
+import CreateGameService from '../../../services/CreateGameService';
 
 export default class GameController {
   public async create(request: Request, response: Response): Promise<Response> {
@@ -16,7 +15,6 @@ export default class GameController {
   }
 
   public async index(request: Request, response: Response): Promise<Response> {
-    return response.status(200).json({ message: "Hello World" });
+    return response.status(200).json({ message: 'Hello World' });
   }
-
 }

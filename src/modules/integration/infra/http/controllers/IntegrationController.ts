@@ -1,7 +1,8 @@
-import { container } from "tsyringe";
-import { Request, Response } from "express";
-import axios from "axios";
-import { CreateNotionUserConnection } from "../../../services/CreateNotionUserConnection";
+/* eslint-disable camelcase */
+import { container } from 'tsyringe';
+import { Request, Response } from 'express';
+import axios from 'axios';
+import { CreateNotionUserConnection } from '../../../services/CreateNotionUserConnection';
 
 interface NotionResponse {
   access_token: string;
@@ -27,16 +28,21 @@ export default class IntegrationController {
 
     const createNotionUserConnection = container.resolve(CreateNotionUserConnection);
 
-    const notionResponse = await axios.post<NotionResponse>('https://api.notion.com/v1/oauth/token', {
-      grant_type: 'authorization_code',
-      code: code,
-    },
+    const notionResponse = await axios.post<NotionResponse>(
+      'https://api.notion.com/v1/oauth/token',
       {
-        auth: { username: process.env.NOTION_CLIENT_ID_OAUTH || "", password: process.env.NOTION_CLIENT_SECRET_OAUTH || "" },
-        headers: { "Content-Type": "application/json" },
-      });
+        grant_type: 'authorization_code',
+        code,
+      },
+      {
+        auth: { username: process.env.NOTION_CLIENT_ID_OAUTH || '', password: process.env.NOTION_CLIENT_SECRET_OAUTH || '' },
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
 
-    const { access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name } = notionResponse.data;
+    const {
+      access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name,
+    } = notionResponse.data;
 
     const notionUserConnection = await createNotionUserConnection.execute({
       accessToken: access_token,

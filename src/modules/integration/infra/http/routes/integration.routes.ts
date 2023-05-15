@@ -1,6 +1,6 @@
-import { Router } from "express";
-import ensureAuthenticate from "../../../../users/infra/middlewares/ensureAuthenticate";
-import IntegrationController from "../controllers/IntegrationController";
+import { Router } from 'express';
+import ensureAuthenticate from '../../../../users/infra/middlewares/ensureAuthenticate';
+import IntegrationController from '../controllers/IntegrationController';
 
 const integrationRouter = Router();
 const integrationController = new IntegrationController();

@@ -1,10 +1,12 @@
-import { Client } from "@notionhq/client";
-import { AppError } from "../shared/errors/AppError";
-import GameInfo, { TimesToBeat } from "../interfaces/GameInfo";
+import { Client } from '@notionhq/client';
+import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+
+import { AppError } from '../shared/errors/AppError';
+
+import { GameInfo, TimesToBeat } from '../interfaces/GameInfo';
 import { SelectOptions } from '../interfaces/SelectOptions';
-import { DatabaseObjectResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-import { IUpdateGameInfo } from "../interfaces/IUpdateGameInfo";
-import { PlatformOptions } from "../interfaces/PlatformOptions";
+import { IUpdateGameInfo } from '../interfaces/IUpdateGameInfo';
+import { PlatformOptions } from '../interfaces/PlatformOptions';
 
 interface PlatformOptionsResponse {
   platformOptions: PlatformOptions[];
@@ -58,13 +60,18 @@ interface IPlatformProperties {
 
 export class NotionApi {
   private notion: Client;
+
   private gameDatabaseId: string | undefined;
+
   private platformDatabaseId: string | undefined;
 
-  constructor(accessToken: string, gameDatabaseId?: string, platformDatabaseId?: string) {
+  private defaultStatusName: string;
+
+  constructor(accessToken: string, defaultStatusName: string, gameDatabaseId?: string, platformDatabaseId?: string) {
     this.notion = new Client({ auth: accessToken });
     this.gameDatabaseId = gameDatabaseId;
     this.platformDatabaseId = platformDatabaseId;
+    this.defaultStatusName = defaultStatusName;
   }
 
   async searchDatabasesIds(gameDatabaseName: string, platformDatabaseName: string) {
@@ -76,23 +83,25 @@ export class NotionApi {
     return { gameDatabaseId: gameDatabase.id, platformDatabaseId: platformDatabase.id };
   }
 
-  async readItem(title: string) {
+  async readItem(title: string): Promise<gamesProperties | undefined> {
     if (this.gameDatabaseId) {
       const gamesInDatabase = await this.notion.databases.query({
         database_id: this.gameDatabaseId,
       });
 
-      const gamesWithProperties = gamesInDatabase.results.map(result => {
+      const gamesWithProperties = gamesInDatabase.results.map((result) => {
         const resultAny = result as any;
         const resultWithProperties = resultAny as gamesProperties;
 
         return resultWithProperties;
       });
 
-      const game = gamesWithProperties.find(game => game.properties.game_title.title[0].text.content === title);
+      const game = gamesWithProperties.find((gameWithProperties) => gameWithProperties.properties.game_title.title[0].text.content === title);
 
       return game;
     }
+
+    return undefined;
   }
 
   async getDatabaseByName(name: string): Promise<DatabaseObjectResponse> {
@@ -101,7 +110,7 @@ export class NotionApi {
       filter: {
         value: 'database',
         property: 'object',
-      }
+      },
     });
 
     const { id, object } = database.results[0];
@@ -132,7 +141,7 @@ export class NotionApi {
   async getPlatformsOptions(): Promise<PlatformOptionsResponse> {
     if (!this.platformDatabaseId) {
       throw new AppError('Error: No database ID');
-    };
+    }
 
     const queryAllPlatforms = await this.notion.databases.query({
       database_id: this.platformDatabaseId,
@@ -140,7 +149,7 @@ export class NotionApi {
 
     const entries = queryAllPlatforms.results;
 
-    const platformsIdsWithName = entries.map(entry => {
+    const platformsIdsWithName = entries.map((entry) => {
       const entryAny = entry as any;
       const entryWithProperties = entryAny as IPlatformProperties;
 
@@ -150,7 +159,7 @@ export class NotionApi {
       } as PlatformOptions;
     });
 
-    const undefinedPlatform = platformsIdsWithName.find(platform => platform.name === 'Undefined Platform');
+    const undefinedPlatform = platformsIdsWithName.find((platform) => platform.name === 'Undefined Platform');
 
     if (!undefinedPlatform) {
       throw new AppError('Error: No undefined platform, please create one');
@@ -162,7 +171,7 @@ export class NotionApi {
   async getStatusOptions(): Promise<SelectOptions[]> {
     if (!this.gameDatabaseId) {
       throw new AppError('Error: No database ID');
-    };
+    }
 
     const gameDatabaseInfo = await this.notion.databases.retrieve({
       database_id: this.gameDatabaseId,
@@ -179,7 +188,7 @@ export class NotionApi {
   async insertGame(gameName: string, gameInfo: Request): Promise<GameInfo | undefined> {
     if (!this.gameDatabaseId || !this.platformDatabaseId) {
       throw new AppError('Error: No database ID');
-    };
+    }
 
     const gameDatabaseInfoPromise = this.notion.databases.retrieve({
       database_id: this.gameDatabaseId,
@@ -190,10 +199,10 @@ export class NotionApi {
 
     const allGamesInDatabaseAny = allGamesInDatabase as any;
     const allGamesInDatabaseWithProperties = allGamesInDatabaseAny as gamesProperties[];
-    
-    const gameAlreadyExists = allGamesInDatabaseWithProperties.find(game => game.properties.game_title.title[0].text.content === gameName);
 
-    if(gameAlreadyExists) {
+    const gameAlreadyExists = allGamesInDatabaseWithProperties.find((game) => game.properties.game_title.title[0].text.content === gameName);
+
+    if (gameAlreadyExists) {
       throw new AppError('Game already exists');
     }
 
@@ -205,19 +214,19 @@ export class NotionApi {
 
     if (!platformOptions) {
       throw new AppError('Error: No platform options');
-    };
+    }
 
-    const platformsToAdd = platformOptions.filter(platformOption => gameInfo.platformNames.some(platformName => platformName === platformOption.name));
+    const platformsToAdd = platformOptions.filter((platformOption) => gameInfo.platformNames.some((platformName) => platformName === platformOption.name));
 
-    const platformsId = platformsToAdd.map(platform => {
-      return {
-        id: platform.id,
-      }
-    });
+    const platformsId = platformsToAdd.map((platform) => ({
+      id: platform.id,
+    }));
 
-    const statusId = statusOptions.find(status => status.name === 'Want to Play')?.id || statusOptions[0].id
+    const selectId = statusOptions.find((status) => status.name === this.defaultStatusName)?.id;
 
-    const response = await this.notion.pages.create({
+    const select = selectId ? { id: selectId } : { name: this.defaultStatusName };
+
+    await this.notion.pages.create({
       parent: {
         database_id: this.gameDatabaseId,
       },
@@ -233,12 +242,10 @@ export class NotionApi {
           ],
         },
         platform: {
-          relation: platformsId || [{ id: undefinedPlatform.id }]
+          relation: platformsId || [{ id: undefinedPlatform.id }],
         },
         status: {
-          select: {
-            id: statusId,
-          },
+          select,
         },
         time_to_beat: {
           number: gameInfo.timeToBeat.main,
@@ -250,11 +257,11 @@ export class NotionApi {
         },
         obtained_data: {
           checkbox: true,
-        }
+        },
       },
     });
 
-    console.log(`The game ${gameName} was inserted with success!`)
+    console.log(`The game ${gameName} was inserted with success!`);
 
     const gameAdded = {
       name: gameName,
@@ -269,17 +276,15 @@ export class NotionApi {
   async updateGameInfo(game: IUpdateGameInfo, statusOptions: SelectOptions[], statusName?: string): Promise<void> {
     if (!this.gameDatabaseId) {
       throw new AppError('Error: No database ID');
-    };
+    }
 
-    const status = statusOptions.find(status => status.name === statusName)?.id;
-    const wantToPlayId = statusOptions.find(status => status.name === 'Want to Play')?.id;
+    const status = statusOptions.find((statusOption) => statusOption.name === statusName)?.id;
+    const wantToPlayId = statusOptions.find((statusOption) => statusOption.name === 'Want to Play')?.id;
     const releaseDateWithoutTime = new Date(game.releaseDate).toISOString().substring(0, 10);
 
-    const platformsToAdd = game.platform.map(platform => {
-      return {
-        id: platform.id,
-      }
-    });
+    const platformsToAdd = game.platform.map((platform) => ({
+      id: platform.id,
+    }));
 
     await this.notion.pages.update({
       page_id: game.page_id,
@@ -312,15 +317,15 @@ export class NotionApi {
         },
         obtained_data: {
           checkbox: true,
-        }
-      }
+        },
+      },
     });
   }
 
   async searchForNewGames(): Promise<PageObjectResponse[]> {
     if (!this.gameDatabaseId) {
       throw new AppError('Error: No database ID');
-    };
+    }
 
     const queryAllNewGames = await this.notion.databases.query({
       database_id: this.gameDatabaseId,
@@ -329,11 +334,9 @@ export class NotionApi {
         checkbox: {
           equals: false,
         },
-      }
+      },
     });
 
     return queryAllNewGames.results as PageObjectResponse[];
   }
-
 }
-
