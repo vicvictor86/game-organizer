@@ -5,6 +5,7 @@ import { ICreateNotionUserConnectionDTO } from "../dtos/ICreateNotionUserConnect
 import { INotionUserConnectionRepository } from "../repositories/INotionUserConnectionRepository";
 
 import { NotionUserConnection } from "../infra/typeorm/entities/NotionUserConnection";
+import { IUserSettingsRepository } from "../../users/repositories/IUserSettingsRepository";
 
 interface Request {
   userId: string;
@@ -22,6 +23,9 @@ export class CreateNotionUserConnection {
   constructor(
     @inject("NotionUserConnectionRepository")
     private notionUserConnectionRepository: INotionUserConnectionRepository,
+
+    @inject("UserSettingsRepository")
+    private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
   async execute(data: Request): Promise<NotionUserConnection> {
@@ -29,7 +33,13 @@ export class CreateNotionUserConnection {
       throw new Error("Access Token is required");
     }
 
-    const notionApi = new NotionApi(data.accessToken);
+    const userSettings = await this.userSettingsRepository.findByUserId(data.userId);
+
+    if (!userSettings) {
+      throw new Error("User settings not found");
+    }
+
+    const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
     const { gameDatabaseId, platformDatabaseId } = await notionApi.searchDatabasesIds("Games Database", "Platforms Database");
 
     const dataWithDatabases = { ...data, gameDatabaseId, platformDatabaseId } as ICreateNotionUserConnectionDTO;
