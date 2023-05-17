@@ -3,7 +3,7 @@ import { NotionTablePagesAndDatabases } from '../infra/typeorm/entities/NotionTa
 
 export interface INotionTablePagesAndDatabasesRepository {
   findById(id: string): Promise<NotionTablePagesAndDatabases | null>;
-  findByUserId(userId: string): Promise<NotionTablePagesAndDatabases | null>;
+  findByUserId(userId: string): Promise<NotionTablePagesAndDatabases[] | null>;
   findByOwnerId(ownerId: string): Promise<NotionTablePagesAndDatabases | null>;
   findByPageId(pageId: string): Promise<NotionTablePagesAndDatabases | null>;
   findByGameDatabaseId(gameDatabaseId: string): Promise<NotionTablePagesAndDatabases | null>;

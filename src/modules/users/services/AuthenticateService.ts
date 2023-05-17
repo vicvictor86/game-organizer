@@ -13,6 +13,8 @@ import { IUsersRepository } from '../repositories/IUsersRepository';
 import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository';
 
 import { authConfig } from '../../../config/auth';
+import { INotionTablePagesAndDatabasesRepository } from '../../integration/repositories/INotionTablePagesAndDatabasesRepository';
+import { NotionTablePagesAndDatabases } from '../../integration/infra/typeorm/entities/NotionTablePagesAndDatabases';
 
 interface Response {
   user: User;
@@ -20,6 +22,8 @@ interface Response {
   token: string;
 
   userSettings: UserSettings;
+
+  pages: NotionTablePagesAndDatabases[];
 }
 
 @injectable()
@@ -30,6 +34,9 @@ export default class AuthenticateService {
 
     @inject('UserSettingsRepository')
     private userSettingsRepository: IUserSettingsRepository,
+
+    @inject('NotionTablePagesAndDatabasesRepository')
+    private notionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabasesRepository,
   ) { }
 
   public async execute({ username, password }: ICreateLoginSessionsDTO): Promise<Response> {
@@ -58,6 +65,14 @@ export default class AuthenticateService {
       throw new AppError('User settings not found', 404);
     }
 
-    return { user, token, userSettings };
+    const pages = await this.notionTablePagesAndDatabasesRepository.findByUserId(user.id);
+
+    if (!pages) {
+      throw new AppError('Pages not found', 404);
+    }
+
+    return {
+      user, token, userSettings, pages,
+    };
   }
 }

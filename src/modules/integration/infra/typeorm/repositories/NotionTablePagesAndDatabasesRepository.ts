@@ -14,8 +14,8 @@ export const NotionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabas
     return notionTablePagesAndDatabasesData;
   },
 
-  async findByUserId(userId: string): Promise<NotionTablePagesAndDatabases | null> {
-    const notionTablePagesAndDatabasesData = await notionTablePagesAndDatabases.findOne({
+  async findByUserId(userId: string): Promise<NotionTablePagesAndDatabases[] | null> {
+    const notionTablePagesAndDatabasesData = await notionTablePagesAndDatabases.find({
       where: { userId },
     });
 
