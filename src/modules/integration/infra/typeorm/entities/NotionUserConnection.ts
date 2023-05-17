@@ -38,12 +38,6 @@ export class NotionUserConnection {
   @Column({ name: 'workspace_name' })
     workspaceName: string;
 
-  @Column({ name: 'game_database_id' })
-    gameDatabaseId: string;
-
-  @Column({ name: 'platform_database_id' })
-    platformDatabaseId: string;
-
   @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

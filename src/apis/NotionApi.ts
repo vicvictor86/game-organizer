@@ -1,5 +1,7 @@
 import { Client } from '@notionhq/client';
-import { DatabaseObjectResponse, PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import {
+  DatabaseObjectResponse, GetDatabaseResponse, GetPageResponse, PageObjectResponse, PartialPageObjectResponse,
+} from '@notionhq/client/build/src/api-endpoints';
 
 import { AppError } from '../shared/errors/AppError';
 
@@ -20,7 +22,14 @@ interface Request {
   timeToBeat: TimesToBeat;
 }
 
-interface gamesProperties {
+type PageProperties = {
+  page: GetPageResponse & { parent: { page_id: string } };
+  database: any;
+}
+
+type GameProperties = (PageObjectResponse | PartialPageObjectResponse | GetDatabaseResponse) & NotionGameProperties;
+
+interface NotionGameProperties {
   id: string;
   properties: {
     game_title: {
@@ -43,7 +52,9 @@ interface gamesProperties {
   }
 }
 
-interface IPlatformProperties {
+type IPlatformProperties = (PageObjectResponse | PartialPageObjectResponse | GetDatabaseResponse) & NotionPlatformProperties;
+
+interface NotionPlatformProperties {
   id: string,
   properties: {
     name: {
@@ -83,15 +94,14 @@ export class NotionApi {
     return { gameDatabaseId: gameDatabase.id, platformDatabaseId: platformDatabase.id };
   }
 
-  async readItem(title: string): Promise<gamesProperties | undefined> {
+  async readItem(title: string): Promise<GameProperties | undefined> {
     if (this.gameDatabaseId) {
       const gamesInDatabase = await this.notion.databases.query({
         database_id: this.gameDatabaseId,
       });
 
       const gamesWithProperties = gamesInDatabase.results.map((result) => {
-        const resultAny = result as any;
-        const resultWithProperties = resultAny as gamesProperties;
+        const resultWithProperties = result as GameProperties;
 
         return resultWithProperties;
       });
@@ -102,6 +112,28 @@ export class NotionApi {
     }
 
     return undefined;
+  }
+
+  async getAllDatabases(): Promise<any[]> {
+    const databases = await this.notion.search({
+      filter: {
+        property: 'object',
+        value: 'database',
+      },
+    });
+
+    return databases.results;
+  }
+
+  async getAllPages(): Promise<any[]> {
+    const pages = await this.notion.search({
+      filter: {
+        property: 'object',
+        value: 'page',
+      },
+    });
+
+    return pages.results;
   }
 
   async getDatabaseByName(name: string): Promise<DatabaseObjectResponse> {
@@ -124,6 +156,24 @@ export class NotionApi {
     }
 
     return database.results[0] as DatabaseObjectResponse;
+  }
+
+  async getDatabaseByTopHierarchyPageId(pageId: string) {
+    const databases = await this.getAllDatabases();
+
+    const databaseParents = databases.map((database) => ({ parent: database.parent, database }));
+
+    const databaseParentInfoPromise = databaseParents.map(async (databaseParent) => {
+      const page = await this.notion.pages.retrieve({
+        page_id: databaseParent.parent.page_id,
+      });
+
+      return { page, database: databaseParent.database };
+    });
+
+    const databaseParentInfo = await Promise.all(databaseParentInfoPromise) as PageProperties[];
+
+    return databaseParentInfo.filter((databaseParent) => databaseParent.page.parent.page_id === pageId).map((databaseParent) => databaseParent.database);
   }
 
   async getAllGames(): Promise<PageObjectResponse[]> {
@@ -150,8 +200,7 @@ export class NotionApi {
     const entries = queryAllPlatforms.results;
 
     const platformsIdsWithName = entries.map((entry) => {
-      const entryAny = entry as any;
-      const entryWithProperties = entryAny as IPlatformProperties;
+      const entryWithProperties = entry as IPlatformProperties;
 
       return {
         id: entryWithProperties.id,
@@ -177,12 +226,33 @@ export class NotionApi {
       database_id: this.gameDatabaseId,
     });
 
-    const gamesAny = gameDatabaseInfo as any;
-    const gamesWithProperties = gamesAny as gamesProperties;
+    const gamesWithProperties = gameDatabaseInfo as GameProperties;
 
     const statusOptions = gamesWithProperties.properties.status.select.options;
 
     return statusOptions;
+  }
+
+  async getPageById(id: string): Promise<GetPageResponse> {
+    const page = this.notion.pages.retrieve({
+      page_id: id,
+    });
+
+    return page;
+  }
+
+  async getPagesByIds(ids: string[]): Promise<GetPageResponse[]> {
+    const pagesPromises = ids.map(async (id) => {
+      const pagePromise = this.notion.pages.retrieve({
+        page_id: id,
+      });
+
+      return pagePromise;
+    });
+
+    const pages = await Promise.all(pagesPromises);
+
+    return pages;
   }
 
   async insertGame(gameName: string, gameInfo: Request): Promise<GameInfo | undefined> {
@@ -197,8 +267,7 @@ export class NotionApi {
 
     const [gameDatabaseInfo, allGamesInDatabase] = await Promise.all([gameDatabaseInfoPromise, allGamesInDatabasePromise]);
 
-    const allGamesInDatabaseAny = allGamesInDatabase as any;
-    const allGamesInDatabaseWithProperties = allGamesInDatabaseAny as gamesProperties[];
+    const allGamesInDatabaseWithProperties = allGamesInDatabase as GameProperties[];
 
     const gameAlreadyExists = allGamesInDatabaseWithProperties.find((game) => game.properties.game_title.title[0].text.content === gameName);
 
@@ -206,8 +275,7 @@ export class NotionApi {
       throw new AppError('Game already exists');
     }
 
-    const gamesAny = gameDatabaseInfo as any;
-    const gamesWithProperties = gamesAny as gamesProperties;
+    const gamesWithProperties = gameDatabaseInfo as GameProperties;
 
     const statusOptions = gamesWithProperties.properties.status.select.options;
     const { platformOptions, undefinedPlatform } = await this.getPlatformsOptions();

@@ -4,12 +4,12 @@ import CreateGameService from '../../../services/CreateGameService';
 
 export default class GameController {
   public async create(request: Request, response: Response): Promise<Response> {
-    const { title } = request.body;
+    const { title, pageId } = request.body;
     const { id } = request.user;
 
     const createGameService = container.resolve(CreateGameService);
 
-    const gameInformation = await createGameService.execute(title, id);
+    const gameInformation = await createGameService.execute({ title, userId: id, pageId });
 
     return response.status(200).json(gameInformation);
   }

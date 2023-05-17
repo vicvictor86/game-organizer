@@ -2,7 +2,7 @@
 import { container } from 'tsyringe';
 import { Request, Response } from 'express';
 import axios from 'axios';
-import { CreateNotionUserConnection } from '../../../services/CreateNotionUserConnection';
+import { CreateNotionUserConnectionService } from '../../../services/CreateNotionUserConnectionService';
 
 interface NotionResponse {
   access_token: string;
@@ -26,7 +26,7 @@ export default class IntegrationController {
     const { code } = request.query;
     const { id } = request.user;
 
-    const createNotionUserConnection = container.resolve(CreateNotionUserConnection);
+    const createNotionUserConnectionService = container.resolve(CreateNotionUserConnectionService);
 
     const notionResponse = await axios.post<NotionResponse>(
       'https://api.notion.com/v1/oauth/token',
@@ -44,7 +44,7 @@ export default class IntegrationController {
       access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name,
     } = notionResponse.data;
 
-    const notionUserConnection = await createNotionUserConnection.execute({
+    const notionUserConnection = await createNotionUserConnectionService.execute({
       accessToken: access_token,
       ownerId: owner.user.id,
       workspaceId: workspace_id,

@@ -9,8 +9,13 @@ import { UsersRepository } from '../../modules/users/infra/typeorm/repositories/
 import { IUserSettingsRepository } from '../../modules/users/repositories/IUserSettingsRepository';
 import { UserSettingsRepository } from '../../modules/users/infra/typeorm/repositories/UserSettingsRepository';
 
+import { INotionTablePagesAndDatabasesRepository } from '../../modules/integration/repositories/INotionTablePagesAndDatabasesRepository';
+import { NotionTablePagesAndDatabasesRepository } from '../../modules/integration/infra/typeorm/repositories/NotionTablePagesAndDatabasesRepository';
+
 container.registerInstance<INotionUserConnectionRepository>('NotionUserConnectionRepository', NotionUserConnectionRepository);
 
 container.registerInstance<IUsersRepository>('UsersRepository', UsersRepository);
 
 container.registerInstance<IUserSettingsRepository>('UserSettingsRepository', UserSettingsRepository);
+
+container.registerInstance<INotionTablePagesAndDatabasesRepository>('NotionTablePagesAndDatabases', NotionTablePagesAndDatabasesRepository);
