@@ -22,6 +22,10 @@ interface Request {
   duplicatedTemplateId?: string;
 }
 
+interface DatabaseByPage {
+  [key: string]: any[];
+}
+
 @injectable()
 export class CreateNotionUserConnectionService {
   constructor(
@@ -35,7 +39,7 @@ export class CreateNotionUserConnectionService {
     private notionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabasesRepository,
   ) { }
 
-  async execute(data: Request): Promise<NotionUserConnection> {
+  async execute(data: Request): Promise<NotionUserConnection | undefined> {
     if (!data.accessToken) {
       throw new Error('Access Token is required');
     }
@@ -48,37 +52,58 @@ export class CreateNotionUserConnectionService {
 
     const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
 
-    const pages = await notionApi.getAllPages();
+    const allDatabases = await notionApi.getAllDatabases();
 
-    const databasesPromise = pages.map(async (page) => {
-      const databasePage = await notionApi.getDatabaseByTopHierarchyPageId(page.id);
+    const databasesByPage: DatabaseByPage = {};
 
-      const gameDatabaseId = databasePage.find((database) => database.title[0].plain_text === 'Games')?.id;
-      const platformDatabaseId = databasePage.find((database) => database.title[0].plain_text === 'Platforms')?.id;
+    const pagesOfDatabasesPromise = allDatabases.map(async (database) => {
+      const pageDatabase = await notionApi.getTopHierarchyPageIdByDatabaseId(database.id);
 
-      if (!gameDatabaseId || !platformDatabaseId) {
-        throw new AppError('Could not find databases', 400);
+      if (!pageDatabase) {
+        return undefined;
       }
 
-      return { gameDatabaseId, platformDatabaseId, pageId: page.id };
+      if (!databasesByPage[pageDatabase.page_id]) {
+        databasesByPage[pageDatabase.page_id] = [database];
+      } else {
+        databasesByPage[pageDatabase.page_id] = [...databasesByPage[pageDatabase.page_id], database];
+      }
+
+      return { pageId: pageDatabase.page_id, database };
     });
 
-    const databases = await Promise.all(databasesPromise);
+    await Promise.all(pagesOfDatabasesPromise);
 
-    const notionTablePagesAndDatabases = databases.map((database) => ({
-      userId: data.userId,
-      pageId: database.pageId,
-      gameDatabaseId: database.gameDatabaseId,
-      platformDatabaseId: database.platformDatabaseId,
-    }) as ICreateNotionTablePagesAndDatabasesDTO);
+    const entries = Object.entries(databasesByPage);
 
-    const notionUserConnection = await this.notionUserConnectionRepository.create(data);
+    const notionTablePagesAndDatabases = entries.map((pageAndDatabase) => {
+      if (!pageAndDatabase) {
+        return undefined;
+      }
 
-    if (!notionUserConnection) {
-      throw new Error('Could not create NotionUserConnection');
-    }
+      const [pageId, database] = pageAndDatabase;
+
+      const gameDatabaseId = database.find((gameDatabase) => gameDatabase.title[0].plain_text === 'Games')?.id;
+      const platformDatabaseId = database.find((platformDatabase) => platformDatabase.title[0].plain_text === 'Platforms')?.id;
+
+      if (!gameDatabaseId || !platformDatabaseId) {
+        return undefined;
+      }
+
+      return {
+        userId: data.userId,
+        pageId,
+        gameDatabaseId,
+        platformDatabaseId,
+        ownerId: data.ownerId,
+      } as ICreateNotionTablePagesAndDatabasesDTO;
+    });
 
     const createNotionTablePagesAndDatabasesPromise = notionTablePagesAndDatabases.map(async (notionTablePageAndDatabase) => {
+      if (!notionTablePageAndDatabase) {
+        return undefined;
+      }
+
       const notionTablePageAndDatabaseCreated = await this.notionTablePagesAndDatabasesRepository.create(notionTablePageAndDatabase);
 
       if (!notionTablePageAndDatabaseCreated) {
@@ -89,6 +114,18 @@ export class CreateNotionUserConnectionService {
     });
 
     await Promise.all(createNotionTablePagesAndDatabasesPromise);
+
+    const notionUserConnectionAlreadyExists = await this.notionUserConnectionRepository.findByUserId(data.userId);
+
+    if (notionUserConnectionAlreadyExists) {
+      await this.notionUserConnectionRepository.delete(notionUserConnectionAlreadyExists.id);
+    }
+
+    const notionUserConnection = await this.notionUserConnectionRepository.create(data);
+
+    if (!notionUserConnection) {
+      throw new Error('Could not create NotionUserConnection');
+    }
 
     return notionUserConnection;
   }

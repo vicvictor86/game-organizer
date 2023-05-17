@@ -48,8 +48,6 @@ export class IndexUserAvailablePagesNotionApiService {
     const databaseParentPagesIds = uniquePages.map((page) => page.parent.page_id);
     const topHierarchyPages = await notionApi.getPagesByIds(databaseParentPagesIds);
 
-    // const databaseWithPagesId = await notionApi.getTopHierarchyDatabaseByPageId(uniquePages[0].id);
-
     return topHierarchyPages;
   }
 }

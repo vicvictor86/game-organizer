@@ -8,5 +8,6 @@ export interface INotionUserConnectionRepository {
   findByOwnerId(ownerId: string): Promise<NotionUserConnection | null>;
   findByWorkspaceId(workSpaceId: string): Promise<NotionUserConnection | null>;
   create(data: ICreateNotionUserConnectionDTO): Promise<NotionUserConnection>;
+  delete(id: string): Promise<void>;
   save(notionUserConnection: NotionUserConnection): Promise<NotionUserConnection>;
 }

@@ -54,17 +54,6 @@ export default class CreateGameService {
 
     const { gameDatabaseId, platformDatabaseId } = notionTablePageAndDatabase;
 
-    // const databases = await notionApi.getTopHierarchyDatabaseByPageId(pageId);
-
-    // const gameDatabaseId = databases.find((database) => database.title[0].plain_text === 'Games')?.id;
-    // const platformDatabaseId = databases.find((database) => database.title[0].plain_text === 'Platforms')?.id;
-
-    // if (!gameDatabaseId || !platformDatabaseId) {
-    //   throw new AppError('Could not find databases', 400);
-    // }
-
-    // Possivelmente vai ser necessári mudar a tabela de NotionUserConnection já que não se vai ter apenas um database por usuário, é melhor guardar todas as pages que ele deu permissão
-
     const { accessToken } = userConnection;
 
     const apiConsumer = new APIConsumer(accessToken, userSettings.statusName, gameDatabaseId, platformDatabaseId);

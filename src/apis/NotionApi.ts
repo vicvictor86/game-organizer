@@ -176,6 +176,24 @@ export class NotionApi {
     return databaseParentInfo.filter((databaseParent) => databaseParent.page.parent.page_id === pageId).map((databaseParent) => databaseParent.database);
   }
 
+  async getTopHierarchyPageIdByDatabaseId(databaseId: string) {
+    const databases = await this.getAllDatabases();
+
+    const databaseParents = databases.map((database) => ({ parent: database.parent, database }));
+
+    const databaseParentInfoPromise = databaseParents.map(async (databaseParent) => {
+      const page = await this.notion.pages.retrieve({
+        page_id: databaseParent.parent.page_id,
+      });
+
+      return { page, database: databaseParent.database };
+    });
+
+    const databaseParentInfo = await Promise.all(databaseParentInfoPromise) as PageProperties[];
+
+    return databaseParentInfo.find((databaseParent) => databaseParent.database.id === databaseId)?.page.parent;
+  }
+
   async getAllGames(): Promise<PageObjectResponse[]> {
     if (!this.gameDatabaseId) {
       throw new AppError('Error: No database ID');
