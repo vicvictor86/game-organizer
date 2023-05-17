@@ -18,4 +18,4 @@ container.registerInstance<IUsersRepository>('UsersRepository', UsersRepository)
 
 container.registerInstance<IUserSettingsRepository>('UserSettingsRepository', UserSettingsRepository);
 
-container.registerInstance<INotionTablePagesAndDatabasesRepository>('NotionTablePagesAndDatabases', NotionTablePagesAndDatabasesRepository);
+container.registerInstance<INotionTablePagesAndDatabasesRepository>('NotionTablePagesAndDatabasesRepository', NotionTablePagesAndDatabasesRepository);
