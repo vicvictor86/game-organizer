@@ -54,6 +54,10 @@ export const NotionUserConnectionRepository: INotionUserConnectionRepository = u
     return userConnection;
   },
 
+  async delete(id: string): Promise<void> {
+    await userConnectionRepository.delete(id);
+  },
+
   async save(notionUserConnection: NotionUserConnection): Promise<NotionUserConnection> {
     return userConnectionRepository.save(notionUserConnection);
   },
