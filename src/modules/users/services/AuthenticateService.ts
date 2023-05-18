@@ -30,7 +30,7 @@ interface Response {
 
   userSettings: UserSettings;
 
-  userPages: PagesInfoToFront[];
+  userPages?: PagesInfoToFront[];
 }
 
 type PageResponseWithProperties = GetPageResponse & { properties: any };
@@ -79,27 +79,29 @@ export default class AuthenticateService {
 
     const notionUserConnection = await this.notionUserConnectionRepository.findByUserId(user.id);
 
-    if (!notionUserConnection) {
-      throw new AppError('User connection not found', 404);
+    if (notionUserConnection) {
+      const tableAndPages = await this.notionTablePagesAndDatabasesRepository.findByUserId(user.id);
+
+      if (!tableAndPages) {
+        throw new AppError('Pages not found', 404);
+      }
+
+      const notionApi = new NotionApi(notionUserConnection.accessToken, userSettings.statusName);
+
+      const pagesResponse = await notionApi.getPagesByIds(tableAndPages.map((tableAndPage) => tableAndPage.pageId)) as PageResponseWithProperties[];
+
+      const userPages = pagesResponse.map((page) => ({
+        id: page.id,
+        title: page.properties.title.title[0].plain_text,
+      } as PagesInfoToFront));
+
+      return {
+        user, token, userSettings, userPages,
+      };
     }
-
-    const tableAndPages = await this.notionTablePagesAndDatabasesRepository.findByUserId(user.id);
-
-    if (!tableAndPages) {
-      throw new AppError('Pages not found', 404);
-    }
-
-    const notionApi = new NotionApi(notionUserConnection.accessToken, userSettings.statusName);
-
-    const pagesResponse = await notionApi.getPagesByIds(tableAndPages.map((tableAndPage) => tableAndPage.pageId)) as PageResponseWithProperties[];
-
-    const userPages = pagesResponse.map((page) => ({
-      id: page.id,
-      title: page.properties.title.title[0].plain_text,
-    } as PagesInfoToFront));
 
     return {
-      user, token, userSettings, userPages,
+      user, token, userSettings,
     };
   }
 }
