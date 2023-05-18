@@ -18,7 +18,7 @@ import { INotionTablePagesAndDatabasesRepository } from '../../integration/repos
 import { NotionApi } from '../../../apis/NotionApi';
 import { INotionUserConnectionRepository } from '../../integration/repositories/INotionUserConnectionRepository';
 
-interface PagesInfoToFront {
+export interface PagesInfoToFront {
   id: string;
   title: string;
 }

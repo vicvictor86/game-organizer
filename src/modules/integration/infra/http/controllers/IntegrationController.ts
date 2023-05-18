@@ -3,6 +3,7 @@ import { container } from 'tsyringe';
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { CreateNotionUserConnectionService } from '../../../services/CreateNotionUserConnectionService';
+import { IndexIntegrationInfoService } from '../../../services/IndexIntegrationInfoService';
 
 interface NotionResponse {
   access_token: string;
@@ -56,5 +57,15 @@ export default class IntegrationController {
     });
 
     return response.status(200).json(notionUserConnection);
+  }
+
+  public async index(request: Request, response: Response): Promise<Response> {
+    const { id } = request.user;
+
+    const indexIntegrationInfoService = container.resolve(IndexIntegrationInfoService);
+
+    const integrationInfo = await indexIntegrationInfoService.execute({ userId: id });
+
+    return response.status(200).json(integrationInfo);
   }
 }

@@ -6,5 +6,6 @@ const integrationRouter = Router();
 const integrationController = new IntegrationController();
 
 integrationRouter.get('/', ensureAuthenticate, integrationController.create);
+integrationRouter.get('/info', ensureAuthenticate, integrationController.create);
 
 export default integrationRouter;
