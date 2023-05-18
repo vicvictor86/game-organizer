@@ -2,6 +2,7 @@ import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import { inject, injectable } from 'tsyringe';
 
+import { GetPageResponse } from '@notionhq/client/build/src/api-endpoints';
 import { AppError } from '../../../shared/errors/AppError';
 
 import { ICreateLoginSessionsDTO } from '../dtos/ICreateLoginSessionsDTO';
@@ -14,7 +15,13 @@ import { IUserSettingsRepository } from '../repositories/IUserSettingsRepository
 
 import { authConfig } from '../../../config/auth';
 import { INotionTablePagesAndDatabasesRepository } from '../../integration/repositories/INotionTablePagesAndDatabasesRepository';
-import { NotionTablePagesAndDatabases } from '../../integration/infra/typeorm/entities/NotionTablePagesAndDatabases';
+import { NotionApi } from '../../../apis/NotionApi';
+import { INotionUserConnectionRepository } from '../../integration/repositories/INotionUserConnectionRepository';
+
+interface PagesInfoToFront {
+  id: string;
+  title: string;
+}
 
 interface Response {
   user: User;
@@ -23,8 +30,10 @@ interface Response {
 
   userSettings: UserSettings;
 
-  pages: NotionTablePagesAndDatabases[];
+  userPages: PagesInfoToFront[];
 }
+
+type PageResponseWithProperties = GetPageResponse & { properties: any };
 
 @injectable()
 export default class AuthenticateService {
@@ -37,6 +46,9 @@ export default class AuthenticateService {
 
     @inject('NotionTablePagesAndDatabasesRepository')
     private notionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabasesRepository,
+
+    @inject('NotionUserConnectionRepository')
+    private notionUserConnectionRepository: INotionUserConnectionRepository,
   ) { }
 
   public async execute({ username, password }: ICreateLoginSessionsDTO): Promise<Response> {
@@ -65,14 +77,29 @@ export default class AuthenticateService {
       throw new AppError('User settings not found', 404);
     }
 
-    const pages = await this.notionTablePagesAndDatabasesRepository.findByUserId(user.id);
+    const notionUserConnection = await this.notionUserConnectionRepository.findByUserId(user.id);
 
-    if (!pages) {
+    if (!notionUserConnection) {
+      throw new AppError('User connection not found', 404);
+    }
+
+    const tableAndPages = await this.notionTablePagesAndDatabasesRepository.findByUserId(user.id);
+
+    if (!tableAndPages) {
       throw new AppError('Pages not found', 404);
     }
 
+    const notionApi = new NotionApi(notionUserConnection.accessToken, userSettings.statusName);
+
+    const pagesResponse = await notionApi.getPagesByIds(tableAndPages.map((tableAndPage) => tableAndPage.pageId)) as PageResponseWithProperties[];
+
+    const userPages = pagesResponse.map((page) => ({
+      id: page.id,
+      title: page.properties.title.title[0].plain_text,
+    } as PagesInfoToFront));
+
     return {
-      user, token, userSettings, pages,
+      user, token, userSettings, userPages,
     };
   }
 }
