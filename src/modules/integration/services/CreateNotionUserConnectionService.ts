@@ -58,7 +58,7 @@ export class CreateNotionUserConnectionService {
       const allDatabases = await notionApi.getAllDatabases();
 
       if (allDatabases.length === 0) {
-        throw new AppError('No databases found');
+        return Promise.reject(new AppError('No databases found'));
       }
 
       const databasesByPage: DatabaseByPage = {};
