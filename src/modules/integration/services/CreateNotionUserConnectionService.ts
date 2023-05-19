@@ -52,13 +52,13 @@ export class CreateNotionUserConnectionService {
       throw new Error('User settings not found');
     }
 
-    const notionUserConnection = await polly().waitAndRetry(3).executeForPromise(async () => {
+    const notionUserConnection = await polly().waitAndRetry([100, 400, 800, 1200, 2000]).executeForPromise(async () => {
       const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
 
       const allDatabases = await notionApi.getAllDatabases();
 
       if (allDatabases.length === 0) {
-        return Promise.reject(new AppError('No databases found'));
+        throw new AppError('No databases found');
       }
 
       const databasesByPage: DatabaseByPage = {};
