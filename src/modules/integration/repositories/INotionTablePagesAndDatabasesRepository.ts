@@ -9,5 +9,6 @@ export interface INotionTablePagesAndDatabasesRepository {
   findByGameDatabaseId(gameDatabaseId: string): Promise<NotionTablePagesAndDatabases | null>;
   findByPlatformDatabaseId(platformDatabaseId: string): Promise<NotionTablePagesAndDatabases | null>;
   create(data: ICreateNotionTablePagesAndDatabasesDTO): Promise<NotionTablePagesAndDatabases>;
+  delete(id: string): Promise<void>;
   save(notionTablePagesAndDatabases: NotionTablePagesAndDatabases): Promise<NotionTablePagesAndDatabases>;
 }
