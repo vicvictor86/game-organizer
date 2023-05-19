@@ -62,6 +62,10 @@ export const NotionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabas
     return notionTablePagesAndDatabasesData;
   },
 
+  async delete(id: string): Promise<void> {
+    await notionTablePagesAndDatabases.delete(id);
+  },
+
   async save(notionUserConnection: NotionTablePagesAndDatabases): Promise<NotionTablePagesAndDatabases> {
     return notionTablePagesAndDatabases.save(notionUserConnection);
   },
