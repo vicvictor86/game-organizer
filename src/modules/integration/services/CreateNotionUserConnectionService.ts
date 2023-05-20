@@ -52,83 +52,83 @@ export class CreateNotionUserConnectionService {
       throw new Error('User settings not found');
     }
 
-    const notionUserConnection = await polly().waitAndRetry([100, 400, 800, 1200, 8000]).executeForPromise(async () => {
+    const notionUserConnection = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
       console.log('Trying to create NotionUserConnection');
       const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
 
-      // const allDatabases = await notionApi.getAllDatabases();
-      // console.log('allDatabases', allDatabases);
+      const allDatabases = await notionApi.getAllDatabases();
+      console.log('allDatabases', allDatabases);
 
-      // if (allDatabases.length === 0) {
-      //   throw new AppError('No databases found');
-      // }
+      if (allDatabases.length === 0) {
+        throw new AppError('No databases found');
+      }
 
-      // const databasesByPage: DatabaseByPage = {};
+      const databasesByPage: DatabaseByPage = {};
 
-      // const pagesOfDatabasesPromise = allDatabases.map(async (database) => {
-      //   const pageDatabase = await notionApi.getTopHierarchyPageIdByDatabaseId(database.id);
+      const pagesOfDatabasesPromise = allDatabases.map(async (database) => {
+        const pageDatabase = await notionApi.getTopHierarchyPageIdByDatabaseId(database.id);
 
-      //   if (!pageDatabase) {
-      //     return undefined;
-      //   }
+        if (!pageDatabase) {
+          return undefined;
+        }
 
-      //   if (!databasesByPage[pageDatabase.page_id]) {
-      //     databasesByPage[pageDatabase.page_id] = [database];
-      //   } else {
-      //     databasesByPage[pageDatabase.page_id] = [...databasesByPage[pageDatabase.page_id], database];
-      //   }
+        if (!databasesByPage[pageDatabase.page_id]) {
+          databasesByPage[pageDatabase.page_id] = [database];
+        } else {
+          databasesByPage[pageDatabase.page_id] = [...databasesByPage[pageDatabase.page_id], database];
+        }
 
-      //   return { pageId: pageDatabase.page_id, database };
-      // });
+        return { pageId: pageDatabase.page_id, database };
+      });
 
-      // await Promise.all(pagesOfDatabasesPromise);
+      await Promise.all(pagesOfDatabasesPromise);
 
-      // const entries = Object.entries(databasesByPage);
+      const entries = Object.entries(databasesByPage);
 
-      // const notionTablePagesAndDatabases = entries.map((pageAndDatabase) => {
-      //   if (!pageAndDatabase) {
-      //     return undefined;
-      //   }
+      const notionTablePagesAndDatabases = entries.map((pageAndDatabase) => {
+        if (!pageAndDatabase) {
+          return undefined;
+        }
 
-      //   const [pageId, database] = pageAndDatabase;
+        const [pageId, database] = pageAndDatabase;
 
-      //   const gameDatabaseId = database.find((gameDatabase) => gameDatabase.title[0].plain_text === 'Games')?.id;
-      //   const platformDatabaseId = database.find((platformDatabase) => platformDatabase.title[0].plain_text === 'Platforms')?.id;
+        const gameDatabaseId = database.find((gameDatabase) => gameDatabase.title[0].plain_text === 'Games')?.id;
+        const platformDatabaseId = database.find((platformDatabase) => platformDatabase.title[0].plain_text === 'Platforms')?.id;
 
-      //   if (!gameDatabaseId || !platformDatabaseId) {
-      //     return undefined;
-      //   }
+        if (!gameDatabaseId || !platformDatabaseId) {
+          return undefined;
+        }
 
-      //   return {
-      //     userId: data.userId,
-      //     pageId,
-      //     gameDatabaseId,
-      //     platformDatabaseId,
-      //     ownerId: data.ownerId,
-      //   } as ICreateNotionTablePagesAndDatabasesDTO;
-      // });
+        return {
+          userId: data.userId,
+          pageId,
+          gameDatabaseId,
+          platformDatabaseId,
+          ownerId: data.ownerId,
+        } as ICreateNotionTablePagesAndDatabasesDTO;
+      });
 
-      // const createNotionTablePagesAndDatabasesPromise = notionTablePagesAndDatabases.map(async (notionTablePageAndDatabase) => {
-      //   if (!notionTablePageAndDatabase) {
-      //     return undefined;
-      //   }
+      const createNotionTablePagesAndDatabasesPromise = notionTablePagesAndDatabases.map(async (notionTablePageAndDatabase) => {
+        if (!notionTablePageAndDatabase) {
+          return undefined;
+        }
 
-      //   const notionTablePageAndDatabaseAlreadyExists = await this.notionTablePagesAndDatabasesRepository.findById(notionTablePageAndDatabase.pageId);
+        const notionTablePageAndDatabaseAlreadyExists = await this.notionTablePagesAndDatabasesRepository.findById(notionTablePageAndDatabase.pageId);
 
-      //   if (notionTablePageAndDatabaseAlreadyExists) {
-      //     await this.notionTablePagesAndDatabasesRepository.delete(notionTablePageAndDatabaseAlreadyExists.id);
-      //   }
+        if (notionTablePageAndDatabaseAlreadyExists) {
+          await this.notionTablePagesAndDatabasesRepository.delete(notionTablePageAndDatabaseAlreadyExists.id);
+        }
 
-      //   const notionTablePageAndDatabaseCreated = await this.notionTablePagesAndDatabasesRepository.create(notionTablePageAndDatabase);
+        const notionTablePageAndDatabaseCreated = await this.notionTablePagesAndDatabasesRepository.create(notionTablePageAndDatabase);
 
-      //   if (!notionTablePageAndDatabaseCreated) {
-      //     throw new AppError('Could not create NotionTablePagesAndDatabases');
-      //   }
+        if (!notionTablePageAndDatabaseCreated) {
+          throw new AppError('Could not create NotionTablePagesAndDatabases');
+        }
 
-      //   return notionTablePageAndDatabaseCreated;
-      // });
+        return notionTablePageAndDatabaseCreated;
+      });
 
-      // await Promise.all(createNotionTablePagesAndDatabasesPromise);
+      await Promise.all(createNotionTablePagesAndDatabasesPromise);
 
       const notionUserConnectionAlreadyExists = await this.notionUserConnectionRepository.findByUserId(data.userId);
 
