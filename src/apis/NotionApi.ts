@@ -116,12 +116,10 @@ export class NotionApi {
 
   async getAllDatabases(): Promise<any[]> {
     const databases = await this.notion.search({
-      filter: {
-        property: 'object',
-        value: 'database',
-      },
+
     });
 
+    console.log(databases);
     return databases.results;
   }
 
