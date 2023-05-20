@@ -53,11 +53,9 @@ export class CreateNotionUserConnectionService {
     }
 
     const notionUserConnection = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
-      console.log('Trying to create NotionUserConnection');
       const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
 
       const allDatabases = await notionApi.getAllDatabases();
-      console.log('allDatabases', allDatabases);
 
       if (allDatabases.length === 0) {
         throw new AppError('No databases found');
