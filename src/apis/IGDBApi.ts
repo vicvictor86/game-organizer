@@ -33,6 +33,15 @@ async function getIdsGameInfo(gameName: string, requestOptions: ApicalypseConfig
   return apiResponse.data[0];
 }
 
+async function getIdsSuggestGamesInfo(gameName: string, limit: number, requestOptions: ApicalypseConfig): Promise<IGDBAPIResponse> {
+  const response = apicalypse(requestOptions);
+  const apiResponse = await response.fields([
+    'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
+  ]).search(gameName).limit(limit).request(`${process.env.IGDB_API_BASE_URL}/games`);
+
+  return apiResponse.data;
+}
+
 async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseConfig): Promise<GameInfo> {
   const response = apicalypse(requestOptions);
 
@@ -74,4 +83,17 @@ export async function getGameInfo(gameName: string): Promise<GameInfo | undefine
   const gameInfo = await getInfosByID(gamesIdsInfo, requestOptions);
 
   return gameInfo;
+}
+
+export async function getGamesInfo(gameName: string, limit: number): Promise<IGDBAPIResponse | undefined> {
+  const requestOptions = await getRequestOptions();
+  const gamesIdsInfo = await getIdsSuggestGamesInfo(gameName, limit, requestOptions);
+
+  if (!gamesIdsInfo) {
+    throw new AppError('Game not found');
+  }
+
+  // const gameInfo = await getInfosByID(gamesIdsInfo, requestOptions);
+
+  return gamesIdsInfo;
 }
