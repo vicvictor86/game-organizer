@@ -9,9 +9,6 @@ import { NotionUserConnection } from '../infra/typeorm/entities/NotionUserConnec
 
 import { INotionUserConnectionRepository } from '../repositories/INotionUserConnectionRepository';
 import { IUserSettingsRepository } from '../../users/repositories/IUserSettingsRepository';
-import { INotionTablePagesAndDatabasesRepository } from '../repositories/INotionTablePagesAndDatabasesRepository';
-import { PagesInfoToFront } from '../../users/services/AuthenticateService';
-
 import { AppError } from '../../../shared/errors/AppError';
 
 interface Request {
@@ -40,20 +37,17 @@ export class CreateNotionUserConnectionService {
 
     @inject('UserSettingsRepository')
     private userSettingsRepository: IUserSettingsRepository,
-
-    @inject('NotionTablePagesAndDatabasesRepository')
-    private notionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabasesRepository,
   ) { }
 
   async execute(data: Request): Promise<Response | undefined> {
     if (!data.accessToken) {
-      throw new Error('Access Token is required');
+      throw new AppError('Access Token is required');
     }
 
     const userSettings = await this.userSettingsRepository.findByUserId(data.userId);
 
     if (!userSettings) {
-      throw new Error('User settings not found');
+      throw new AppError('User settings not found');
     }
 
     const { notionUserConnectionCreated, allPages } = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
@@ -66,7 +60,7 @@ export class CreateNotionUserConnectionService {
       const notionUserConnectionCreated = await this.notionUserConnectionRepository.create(data);
 
       if (!notionUserConnectionCreated || (notionUserConnectionCreated && !notionUserConnectionCreated.duplicatedTemplateId)) {
-        throw new Error('Could not create NotionUserConnection');
+        throw new AppError('Could not create NotionUserConnection');
       }
 
       const notionApi = new NotionApi(data.accessToken, userSettings.statusName);

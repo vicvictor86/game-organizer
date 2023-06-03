@@ -3,12 +3,12 @@ import { DataSource } from 'typeorm';
 
 const connectionSource = new DataSource({
   type: 'postgres',
-  // host: process.env.PGHOST,
   url: process.env.NODE_ENV === 'production' ? process.env.DATABASE_URL : process.env.DEVELOPMENT_DATABASE_URL,
-  // port: Number(process.env.PGPORT),
-  // username: process.env.PGUSER,
-  // password: process.env.PGPASSWORD,
-  // database: process.env.PGDATABASE,
+  host: process.env.PGHOST,
+  port: Number(process.env.PGPORT),
+  username: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
   entities: [process.env.NODE_ENV === 'production'
     ? './dist/modules/**/infra/typeorm/entities/*.js'
     : './src/modules/**/infra/typeorm/entities/*.ts',
