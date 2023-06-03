@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 const connectionSource = new DataSource({
   type: 'postgres',
   // host: process.env.PGHOST,
-  url: process.env.NODE_ENV === 'production' ? process.env.DATABASE_URL : 'postgres://game_organizer_user:cXHS47WqxB6LtiKu27NhjkBinOtKATBv@dpg-che4v5rhp8ubgo2e3r30-a.ohio-postgres.render.com/game_organizer?ssl=true',
+  url: process.env.NODE_ENV === 'production' ? process.env.DATABASE_URL : process.env.DEVELOPMENT_DATABASE_URL,
   // port: Number(process.env.PGPORT),
   // username: process.env.PGUSER,
   // password: process.env.PGPASSWORD,

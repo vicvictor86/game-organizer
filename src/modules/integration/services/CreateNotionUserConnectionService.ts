@@ -63,6 +63,10 @@ export class CreateNotionUserConnectionService {
 
       const allPages = await notionApi.getAllPages();
 
+      if (!allPages) {
+        throw new AppError('Could not get all pages');
+      }
+
       const notionUserConnectionAlreadyExists = await this.notionUserConnectionRepository.findByUserId(data.userId);
 
       if (notionUserConnectionAlreadyExists) {
