@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable import/no-extraneous-dependencies */
 import { inject, injectable } from 'tsyringe';
 import polly from 'polly-js';
@@ -24,6 +25,11 @@ interface Request {
   duplicatedTemplateId?: string;
 }
 
+interface Response {
+  notionUserConnection: NotionUserConnection;
+  pages: any[];
+}
+
 interface DatabaseByPage {
   [key: string]: any[];
 }
@@ -41,7 +47,7 @@ export class CreateNotionUserConnectionService {
     private notionTablePagesAndDatabasesRepository: INotionTablePagesAndDatabasesRepository,
   ) { }
 
-  async execute(data: Request): Promise<NotionUserConnection | undefined> {
+  async execute(data: Request): Promise<Response | undefined> {
     if (!data.accessToken) {
       throw new Error('Access Token is required');
     }
@@ -52,81 +58,10 @@ export class CreateNotionUserConnectionService {
       throw new Error('User settings not found');
     }
 
-    const notionUserConnection = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
+    const { notionUserConnectionCreated, allPages } = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
       const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
 
-      const allDatabases = await notionApi.getAllDatabases();
-
-      if (allDatabases.length === 0) {
-        throw new AppError('No databases found');
-      }
-
-      const databasesByPage: DatabaseByPage = {};
-
-      const pagesOfDatabasesPromise = allDatabases.map(async (database) => {
-        const pageDatabase = await notionApi.getTopHierarchyPageIdByDatabaseId(database.id);
-
-        if (!pageDatabase) {
-          return undefined;
-        }
-
-        if (!databasesByPage[pageDatabase.page_id]) {
-          databasesByPage[pageDatabase.page_id] = [database];
-        } else {
-          databasesByPage[pageDatabase.page_id] = [...databasesByPage[pageDatabase.page_id], database];
-        }
-
-        return { pageId: pageDatabase.page_id, database };
-      });
-
-      await Promise.all(pagesOfDatabasesPromise);
-
-      const entries = Object.entries(databasesByPage);
-
-      const notionTablePagesAndDatabases = entries.map((pageAndDatabase) => {
-        if (!pageAndDatabase) {
-          return undefined;
-        }
-
-        const [pageId, database] = pageAndDatabase;
-
-        const gameDatabaseId = database.find((gameDatabase) => gameDatabase.title[0].plain_text === 'Games')?.id;
-        const platformDatabaseId = database.find((platformDatabase) => platformDatabase.title[0].plain_text === 'Platforms')?.id;
-
-        if (!gameDatabaseId || !platformDatabaseId) {
-          return undefined;
-        }
-
-        return {
-          userId: data.userId,
-          pageId,
-          gameDatabaseId,
-          platformDatabaseId,
-          ownerId: data.ownerId,
-        } as ICreateNotionTablePagesAndDatabasesDTO;
-      });
-
-      const createNotionTablePagesAndDatabasesPromise = notionTablePagesAndDatabases.map(async (notionTablePageAndDatabase) => {
-        if (!notionTablePageAndDatabase) {
-          return undefined;
-        }
-
-        const notionTablePageAndDatabaseAlreadyExists = await this.notionTablePagesAndDatabasesRepository.findById(notionTablePageAndDatabase.pageId);
-
-        if (notionTablePageAndDatabaseAlreadyExists) {
-          await this.notionTablePagesAndDatabasesRepository.delete(notionTablePageAndDatabaseAlreadyExists.id);
-        }
-
-        const notionTablePageAndDatabaseCreated = await this.notionTablePagesAndDatabasesRepository.create(notionTablePageAndDatabase);
-
-        if (!notionTablePageAndDatabaseCreated) {
-          throw new AppError('Could not create NotionTablePagesAndDatabases');
-        }
-
-        return notionTablePageAndDatabaseCreated;
-      });
-
-      await Promise.all(createNotionTablePagesAndDatabasesPromise);
+      const allPages = await notionApi.getAllPages();
 
       const notionUserConnectionAlreadyExists = await this.notionUserConnectionRepository.findByUserId(data.userId);
 
@@ -140,9 +75,9 @@ export class CreateNotionUserConnectionService {
         throw new Error('Could not create NotionUserConnection');
       }
 
-      return notionUserConnectionCreated;
+      return { notionUserConnectionCreated, allPages };
     }).then((result) => result);
 
-    return notionUserConnection;
+    return { notionUserConnection: notionUserConnectionCreated, pages: allPages };
   }
 }

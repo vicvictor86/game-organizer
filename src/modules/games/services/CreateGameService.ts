@@ -1,4 +1,4 @@
-import { inject, injectable } from 'tsyringe';
+import { inject, injectable, container } from 'tsyringe';
 
 import { AppError } from '../../../shared/errors/AppError';
 
@@ -9,6 +9,7 @@ import { IUserSettingsRepository } from '../../users/repositories/IUserSettingsR
 
 import { GameInfo } from '../../../interfaces/GameInfo';
 import { INotionTablePagesAndDatabasesRepository } from '../../integration/repositories/INotionTablePagesAndDatabasesRepository';
+import { CreateNotionTablePagesAndDatabasesService } from '../../integration/services/CreateNotionTablePagesAndDatabasesService';
 
 interface Request {
   title: string;
@@ -42,10 +43,18 @@ export default class CreateGameService {
       throw new AppError('User settings not found', 400);
     }
 
-    const notionTablePageAndDatabase = await this.notionTablePagesAndDatabasesRepository.findByPageId(pageId);
+    let notionTablePageAndDatabase = await this.notionTablePagesAndDatabasesRepository.findByPageId(pageId);
 
     if (!notionTablePageAndDatabase) {
-      throw new AppError('Page not found', 400);
+      const createNotionTablePagesAndDatabasesService = container.resolve(CreateNotionTablePagesAndDatabasesService);
+
+      await createNotionTablePagesAndDatabasesService.execute({ userId });
+
+      notionTablePageAndDatabase = await this.notionTablePagesAndDatabasesRepository.findByPageId(pageId);
+
+      if (!notionTablePageAndDatabase) {
+        throw new AppError('Page not found', 400);
+      }
     }
 
     if (notionTablePageAndDatabase.ownerId !== userConnection.ownerId) {

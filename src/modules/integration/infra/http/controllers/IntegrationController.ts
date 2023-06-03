@@ -45,7 +45,7 @@ export default class IntegrationController {
       access_token, owner, workspace_id, bot_id, duplicated_template_id, token_type, workspace_icon, workspace_name,
     } = notionResponse.data;
 
-    const notionUserConnection = await createNotionUserConnectionService.execute({
+    const createData = await createNotionUserConnectionService.execute({
       accessToken: access_token,
       ownerId: owner.user.id,
       workspaceId: workspace_id,
@@ -56,7 +56,7 @@ export default class IntegrationController {
       userId: id,
     });
 
-    return response.status(200).json(notionUserConnection);
+    return response.status(200).json({ notionUserConnection: createData?.notionUserConnection, userPages: createData?.pages });
   }
 
   public async index(request: Request, response: Response): Promise<Response> {

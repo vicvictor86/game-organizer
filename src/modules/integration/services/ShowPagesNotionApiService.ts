@@ -8,11 +8,10 @@ import { IUserSettingsRepository } from '../../users/repositories/IUserSettingsR
 
 interface Request {
   userId: string;
-  pageId: string;
 }
 
 @injectable()
-export class IndexPageNotionApiService {
+export class ShowPagesNotionApiService {
   constructor(
     @inject('NotionUserConnectionRepository')
     private notionUserConnectionRepository: INotionUserConnectionRepository,
@@ -21,7 +20,7 @@ export class IndexPageNotionApiService {
     private userSettingsRepository: IUserSettingsRepository,
   ) { }
 
-  async execute({ userId, pageId }: Request): Promise<GetPageResponse> {
+  async execute({ userId }: Request): Promise<GetPageResponse[]> {
     const notionUserConnection = await this.notionUserConnectionRepository.findByUserId(userId);
 
     if (!notionUserConnection) {
@@ -36,8 +35,8 @@ export class IndexPageNotionApiService {
 
     const notionApi = new NotionApi(notionUserConnection.accessToken, userSettings.statusName);
 
-    const page = await notionApi.getPageById(pageId);
+    const pages = await notionApi.getAllPages();
 
-    return page;
+    return pages;
   }
 }
