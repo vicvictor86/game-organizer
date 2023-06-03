@@ -59,14 +59,6 @@ export class CreateNotionUserConnectionService {
     }
 
     const { notionUserConnectionCreated, allPages } = await polly().waitAndRetry([4000, 6000]).executeForPromise(async () => {
-      const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
-
-      const allPages = await notionApi.getAllPages();
-
-      if (!allPages) {
-        throw new AppError('Could not get all pages');
-      }
-
       const notionUserConnectionAlreadyExists = await this.notionUserConnectionRepository.findByUserId(data.userId);
 
       if (notionUserConnectionAlreadyExists) {
@@ -75,9 +67,11 @@ export class CreateNotionUserConnectionService {
 
       const notionUserConnectionCreated = await this.notionUserConnectionRepository.create(data);
 
-      if (!notionUserConnectionCreated) {
+      if (!notionUserConnectionCreated || (notionUserConnectionCreated && !notionUserConnectionCreated.duplicatedTemplateId)) {
         throw new Error('Could not create NotionUserConnection');
       }
+
+      const allPages = [{ id: notionUserConnectionCreated.duplicatedTemplateId }];
 
       return { notionUserConnectionCreated, allPages };
     }).then((result) => result);
