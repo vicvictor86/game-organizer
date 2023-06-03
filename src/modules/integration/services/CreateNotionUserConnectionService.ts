@@ -2,15 +2,15 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { inject, injectable } from 'tsyringe';
 import polly from 'polly-js';
+import { GetPageResponse } from '@notionhq/client/build/src/api-endpoints';
 import { NotionApi } from '../../../apis/NotionApi';
-
-import { ICreateNotionTablePagesAndDatabasesDTO } from '../dtos/ICreateNotionTablePagesAndDatabasesDTO';
 
 import { NotionUserConnection } from '../infra/typeorm/entities/NotionUserConnection';
 
 import { INotionUserConnectionRepository } from '../repositories/INotionUserConnectionRepository';
 import { IUserSettingsRepository } from '../../users/repositories/IUserSettingsRepository';
 import { INotionTablePagesAndDatabasesRepository } from '../repositories/INotionTablePagesAndDatabasesRepository';
+import { PagesInfoToFront } from '../../users/services/AuthenticateService';
 
 import { AppError } from '../../../shared/errors/AppError';
 
@@ -30,9 +30,7 @@ interface Response {
   pages: any[];
 }
 
-interface DatabaseByPage {
-  [key: string]: any[];
-}
+type PageResponseWithProperties = GetPageResponse & { properties: any };
 
 @injectable()
 export class CreateNotionUserConnectionService {
@@ -71,7 +69,11 @@ export class CreateNotionUserConnectionService {
         throw new Error('Could not create NotionUserConnection');
       }
 
-      const allPages = [{ id: notionUserConnectionCreated.duplicatedTemplateId }];
+      const notionApi = new NotionApi(data.accessToken, userSettings.statusName);
+
+      const allPagesResponse = await notionApi.getPageById(notionUserConnectionCreated.duplicatedTemplateId) as PageResponseWithProperties;
+
+      const allPages = [{ id: allPagesResponse.id, title: allPagesResponse.properties.title.title[0].plain_text }];
 
       return { notionUserConnectionCreated, allPages };
     }).then((result) => result);
