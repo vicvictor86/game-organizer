@@ -33,7 +33,7 @@ async function getIdsGameInfo(gameName: string, requestOptions: ApicalypseConfig
   return apiResponse.data[0];
 }
 
-async function getIdsSuggestGamesInfo(gameName: string, limit: number, requestOptions: ApicalypseConfig): Promise<IGDBAPIResponse> {
+async function getIdsSuggestGamesInfo(gameName: string, limit: number, requestOptions: ApicalypseConfig): Promise<IGDBAPIResponse[]> {
   const response = apicalypse(requestOptions);
   const apiResponse = await response.fields([
     'name', 'total_rating', 'first_release_date', 'genres', 'language_supports', 'platforms',
@@ -72,6 +72,46 @@ async function getInfosByID(data: IGDBAPIResponse, requestOptions: ApicalypseCon
   return actualGameInfo;
 }
 
+async function getInfosByIDs(data: IGDBAPIResponse[], requestOptions: ApicalypseConfig): Promise<GameInfo[]> {
+  const response = apicalypse(requestOptions);
+
+  const allPromises = data.map(async (game) => {
+    const gameGenreFormatted = game.genres?.toString();
+    const promisesGenre = await response.fields('name').where(`id = (${gameGenreFormatted})`).request(`${process.env.IGDB_API_BASE_URL}/genres`);
+
+    const gamePlatformFormatted = game.platforms?.toString();
+    const promisesPlatform = await response.fields('name').where(`id = (${gamePlatformFormatted})`).request(`${process.env.IGDB_API_BASE_URL}/platforms`);
+
+    return { gameId: game.id, promisesGenre, promisesPlatform };
+  });
+
+  const gamesGenresAndPlatform = await Promise.all(allPromises);
+
+  const gameInfoPromises = data.map(async (game) => {
+    const unixTimeStampToMillis = new Date(game.first_release_date * 1000);
+    const timesToBeat = await getGameTimeToBeat(game.name);
+
+    const actualGameInfo = {
+      name: game.name,
+      platforms: gamesGenresAndPlatform.find((gameResolve) => gameResolve.gameId === game.id)?.promisesPlatform.data,
+      genres: gamesGenresAndPlatform.find((gameResolve) => gameResolve.gameId === game.id)?.promisesGenre.data,
+      rating: game.total_rating,
+      releaseDate: unixTimeStampToMillis,
+      timeToBeat: {
+        main: timesToBeat?.main || 0,
+        mainExtra: timesToBeat?.mainExtra || 0,
+        completionist: timesToBeat?.completionist || 0,
+      },
+    } as GameInfo;
+
+    return actualGameInfo;
+  });
+
+  const gamesInfo = await Promise.all(gameInfoPromises);
+
+  return gamesInfo;
+}
+
 export async function getGameInfo(gameName: string): Promise<GameInfo | undefined> {
   const requestOptions = await getRequestOptions();
   const gamesIdsInfo = await getIdsGameInfo(gameName, requestOptions);
@@ -85,7 +125,7 @@ export async function getGameInfo(gameName: string): Promise<GameInfo | undefine
   return gameInfo;
 }
 
-export async function getGamesInfo(gameName: string, limit: number): Promise<IGDBAPIResponse | undefined> {
+export async function getGamesInfo(gameName: string, limit: number): Promise<GameInfo[] | undefined> {
   const requestOptions = await getRequestOptions();
   const gamesIdsInfo = await getIdsSuggestGamesInfo(gameName, limit, requestOptions);
 
@@ -93,7 +133,7 @@ export async function getGamesInfo(gameName: string, limit: number): Promise<IGD
     throw new AppError('Game not found');
   }
 
-  // const gameInfo = await getInfosByID(gamesIdsInfo, requestOptions);
+  const gamesInfo = await getInfosByIDs(gamesIdsInfo, requestOptions);
 
-  return gamesIdsInfo;
+  return gamesInfo;
 }
